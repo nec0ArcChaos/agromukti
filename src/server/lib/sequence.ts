@@ -1,16 +1,28 @@
 import { Prisma } from "@prisma/client";
 
-export type TipeSequence = "SETORAN" | "PENARIKAN" | "PENGAMBILAN" | "NASABAH";
+export type TipeSequence =
+  | "SETORAN"
+  | "PENARIKAN"
+  | "PENGAMBILAN"
+  | "NASABAH"
+  | "PETANI"
+  | "PERMINTAAN"
+  | "DISTRIBUSI"
+  | "PRODUKSI";
 
 const AWALAN: Record<TipeSequence, string> = {
   SETORAN: "ST",
   PENARIKAN: "TR",
   PENGAMBILAN: "PP",
   NASABAH: "AGM",
+  PETANI: "TN",
+  PERMINTAAN: "PMT",
+  DISTRIBUSI: "DST",
+  PRODUKSI: "PRD",
 };
 
-/** Nomor nasabah berjalan terus, tidak direset tiap bulan. */
-const TANPA_PERIODE: TipeSequence[] = ["NASABAH"];
+/** Nomor identitas orang berjalan terus, tidak direset tiap bulan. */
+const TANPA_PERIODE: TipeSequence[] = ["NASABAH", "PETANI"];
 
 function periodeDari(tanggal: Date): string {
   const th = tanggal.getFullYear();

@@ -103,6 +103,14 @@ async function main() {
     const petani = await prisma.petani.create({
       data: { wargaId: warga.id, kode: "TN-0001", kelompokTani: "Tani Makmur Apuy" },
     });
+    // Kode di atas dibuat langsung, jadi penghitung sequence harus ikut
+    // dimajukan - kalau tidak, petani berikutnya akan diberi TN-0001 lagi
+    // dan gagal karena kode bersifat unik.
+    await prisma.sequence.upsert({
+      where: { tipe_periode: { tipe: "PETANI", periode: "-" } },
+      create: { tipe: "PETANI", periode: "-", nomorTerakhir: 1 },
+      update: { nomorTerakhir: 1 },
+    });
     await prisma.lahan.create({
       data: {
         petaniId: petani.id,

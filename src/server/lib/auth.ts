@@ -151,6 +151,14 @@ export async function wajibMasuk(): Promise<Sesi> {
  * menyetujui penarikan, mengubah harga, menerbitkan API key.
  */
 export async function wajibPeran(...izin: Peran[]): Promise<Sesi> {
+  // Dipanggil tanpa peran berarti daftar izin kosong, dan SETIAP pengguna
+  // akan ditolak diam-diam - terlihat seperti bug perizinan, padahal salah
+  // tulis. Sudah pernah terjadi saat berkas rute digenerate dan argumennya
+  // hilang, jadi jadikan galat yang berisik, bukan penolakan senyap.
+  if (izin.length === 0) {
+    throw new Error("wajibPeran() dipanggil tanpa peran - sebutkan minimal satu peran yang diizinkan.");
+  }
+
   const sesi = await wajibMasuk();
   if (!izin.includes(sesi.role)) throw new ForbiddenError();
   return sesi;

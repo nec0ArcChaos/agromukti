@@ -2,16 +2,36 @@ import { redirect } from "next/navigation";
 import { bacaSesiTerverifikasi } from "@/server/lib/auth";
 import NavKlien from "./nav-klien";
 
-const TAUT = [
-  { href: "/dashboard", label: "Beranda" },
-  { href: "/setoran", label: "Setoran" },
-  { href: "/pengambilan", label: "Pengambilan Pengepul" },
-  { href: "/penarikan", label: "Penarikan" },
-  { href: "/nasabah", label: "Nasabah" },
-  { href: "/kategori-sampah", label: "Kategori Sampah" },
-  { href: "/pengepul", label: "Pengepul" },
-  { href: "/kas", label: "Kas" },
-  { href: "/laporan", label: "Laporan" },
+const KELOMPOK_TAUT = [
+  {
+    label: "Umum",
+    taut: [
+      { href: "/dashboard", label: "Beranda" },
+      { href: "/warga", label: "Data Warga" },
+      { href: "/laporan", label: "Laporan" },
+    ],
+  },
+  {
+    label: "Bank Sampah",
+    taut: [
+      { href: "/setoran", label: "Setoran" },
+      { href: "/pengambilan", label: "Pengambilan Pengepul" },
+      { href: "/penarikan", label: "Penarikan" },
+      { href: "/nasabah", label: "Nasabah" },
+      { href: "/kategori-sampah", label: "Kategori Sampah" },
+      { href: "/pengepul", label: "Pengepul" },
+      { href: "/kas", label: "Kas" },
+    ],
+  },
+  {
+    label: "Pertanian",
+    taut: [
+      { href: "/petani", label: "Petani" },
+      { href: "/lahan", label: "Lahan" },
+      { href: "/komoditas", label: "Komoditas" },
+      { href: "/panen", label: "Panen" },
+    ],
+  },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -28,15 +48,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
           <NavKlien nama={sesi.nama} role={sesi.role} />
         </div>
-        <nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 pb-2 text-sm">
-          {TAUT.map((t) => (
-            <a
-              key={t.href}
-              href={t.href}
-              className="whitespace-nowrap rounded-md px-3 py-1.5 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
-            >
-              {t.label}
-            </a>
+        <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-1 gap-y-2 px-4 pb-2 text-sm">
+          {KELOMPOK_TAUT.map((kel) => (
+            <div key={kel.label} className="flex items-center gap-1">
+              <span className="mr-1 whitespace-nowrap text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                {kel.label}
+              </span>
+              {kel.taut.map((t) => (
+                <a
+                  key={t.href}
+                  href={t.href}
+                  className="whitespace-nowrap rounded-md px-2.5 py-1.5 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+                >
+                  {t.label}
+                </a>
+              ))}
+            </div>
           ))}
         </nav>
       </header>
