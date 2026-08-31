@@ -11,7 +11,7 @@ import type { z } from "zod";
 type FilterPenarikan = z.infer<typeof skemaFilterPenarikan>;
 
 const SERTAKAN = {
-  nasabah: { select: { id: true, kode: true, nama: true, saldo: true } },
+  nasabah: { select: { id: true, kode: true, saldo: true, warga: { select: { nama: true } } } },
   pengaju: { select: { id: true, nama: true } },
   penyetuju: { select: { id: true, nama: true } },
 } satisfies Prisma.PenarikanInclude;
@@ -44,12 +44,12 @@ export async function ambilPenarikan(id: string) {
 /** Mengajukan penarikan. Mutasi buku besar BELUM ditulis di sini - baru saat disetujui. */
 export async function ajukanPenarikan(input: InputAjukanPenarikan, userId: string) {
   const [nasabah, pengaturan] = await Promise.all([
-    prisma.nasabah.findUnique({ where: { id: input.nasabahId } }),
+    prisma.nasabah.findUnique({ where: { id: input.nasabahId }, include: { warga: { select: { nama: true } } } }),
     ambilPengaturan(),
   ]);
   if (!nasabah) throw new NotFoundError("Nasabah");
   if (nasabah.status !== "AKTIF") {
-    throw new AppError("NASABAH_NONAKTIF", `${nasabah.nama} berstatus nonaktif.`, 409);
+    throw new AppError("NASABAH_NONAKTIF", `${nasabah.warga.nama} berstatus nonaktif.`, 409);
   }
   if (input.jumlah < pengaturan.minimalPenarikan) {
     throw new AppError(
@@ -61,7 +61,7 @@ export async function ajukanPenarikan(input: InputAjukanPenarikan, userId: strin
   }
   const sisaMinimum = nasabah.saldo - input.jumlah;
   if (sisaMinimum < pengaturan.saldoMinimum) {
-    throw new SaldoTidakCukupError(nasabah.nama, formatRupiah(nasabah.saldo), formatRupiah(input.jumlah));
+    throw new SaldoTidakCukupError(nasabah.warga.nama, formatRupiah(nasabah.saldo), formatRupiah(input.jumlah));
   }
 
   const penarikan = await prisma.$transaction(async (tx) => {
@@ -91,13 +91,13 @@ export async function ajukanPenarikan(input: InputAjukanPenarikan, userId: strin
  * (keluar) dalam satu transaksi yang sama.
  */
 export async function setujuiPenarikan(id: string, adminId: string) {
-  const p = await prisma.penarikan.findUnique({ where: { id }, include: { nasabah: true } });
+  const p = await prisma.penarikan.findUnique({ where: { id }, include: { nasabah: { include: { warga: { select: { nama: true } } } } } });
   if (!p) throw new NotFoundError("Penarikan");
   if (p.status !== "PENDING") {
     throw new ConflictError("BUKAN_PENDING", `Penarikan ${p.nomor} sudah diproses sebelumnya (${p.status}).`);
   }
   if (p.nasabah.saldo < p.jumlah) {
-    throw new SaldoTidakCukupError(p.nasabah.nama, formatRupiah(p.nasabah.saldo), formatRupiah(p.jumlah));
+    throw new SaldoTidakCukupError(p.nasabah.warga.nama, formatRupiah(p.nasabah.saldo), formatRupiah(p.jumlah));
   }
 
   const hasil = await prisma.$transaction(async (tx) => {
@@ -135,7 +135,7 @@ export async function setujuiPenarikan(id: string, adminId: string) {
         saldoSesudah: saldoKasSesudah,
         refTipe: "PENARIKAN",
         refId: id,
-        keterangan: `Pencairan ${p.nomor} kepada ${p.nasabah.nama}`,
+        keterangan: `Pencairan ${p.nomor} kepada ${p.nasabah.warga.nama}`,
       },
     });
 

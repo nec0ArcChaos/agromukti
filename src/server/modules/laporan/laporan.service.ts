@@ -20,7 +20,7 @@ export async function laporanSetoran(f: Rentang & { groupBy: "kategori" | "dusun
     where: { status: { not: "VOID" }, tanggal: filterTanggal(f) },
     include: {
       kategoriSampah: { select: { id: true, nama: true } },
-      nasabah: { select: { id: true, nama: true, dusun: true } },
+      nasabah: { select: { id: true, warga: { select: { nama: true, dusun: true } } } },
     },
   });
 
@@ -30,8 +30,10 @@ export async function laporanSetoran(f: Rentang & { groupBy: "kategori" | "dusun
         ? { key: s.kategoriSampah.id, label: s.kategoriSampah.nama }
         : { key: "tanpa-kategori", label: "Tanpa kategori" };
     }
-    if (f.groupBy === "dusun") return { key: s.nasabah.dusun ?? "-", label: s.nasabah.dusun ?? "Tanpa dusun" };
-    return { key: s.nasabahId, label: s.nasabah.nama };
+    if (f.groupBy === "dusun") {
+      return { key: s.nasabah.warga.dusun ?? "-", label: s.nasabah.warga.dusun ?? "Tanpa dusun" };
+    }
+    return { key: s.nasabahId, label: s.nasabah.warga.nama };
   };
 
   const peta = new Map<string, { label: string; beratKg: Prisma.Decimal; nilai: number; jumlahSetoran: number }>();
@@ -59,7 +61,7 @@ export async function laporanSetoran(f: Rentang & { groupBy: "kategori" | "dusun
 export async function laporanTabungan() {
   const nasabah = await prisma.nasabah.findMany({
     where: { status: "AKTIF" },
-    select: { id: true, kode: true, nama: true, dusun: true, saldo: true },
+    select: { id: true, kode: true, saldo: true, warga: { select: { nama: true, dusun: true } } },
     orderBy: { saldo: "desc" },
   });
 
@@ -72,11 +74,11 @@ export async function laporanTabungan() {
 
 /** Nasabah aktif dibanding total, dirinci per dusun. */
 export async function laporanPartisipasi() {
-  const nasabah = await prisma.nasabah.findMany({ select: { dusun: true, status: true } });
+  const nasabah = await prisma.nasabah.findMany({ select: { status: true, warga: { select: { dusun: true } } } });
 
   const peta = new Map<string, { total: number; aktif: number }>();
   for (const n of nasabah) {
-    const dusun = n.dusun ?? "Tanpa dusun";
+    const dusun = n.warga.dusun ?? "Tanpa dusun";
     const ada = peta.get(dusun) ?? { total: 0, aktif: 0 };
     ada.total += 1;
     if (n.status === "AKTIF") ada.aktif += 1;

@@ -6,11 +6,9 @@ import { api, ApiError } from "@/lib/api";
 type Nasabah = {
   id: string;
   kode: string;
-  nama: string;
-  noHp: string | null;
-  dusun: string | null;
   status: string;
   saldo: number;
+  warga: { nama: string; noHp: string | null; dusun: string | null };
 };
 
 export default function HalamanNasabah() {
@@ -58,9 +56,9 @@ export default function HalamanNasabah() {
               {rows.map((n) => (
                 <tr key={n.id}>
                   <td className="font-mono text-xs">{n.kode}</td>
-                  <td>{n.nama}</td>
-                  <td>{n.dusun ?? "-"}</td>
-                  <td>{n.noHp ?? "-"}</td>
+                  <td>{n.warga.nama}</td>
+                  <td>{n.warga.dusun ?? "-"}</td>
+                  <td>{n.warga.noHp ?? "-"}</td>
                   <td>
                     <span className={`pill ${n.status === "AKTIF" ? "bg-emerald-100 text-emerald-800" : "bg-neutral-200 text-neutral-600"}`}>
                       {n.status}
@@ -93,7 +91,9 @@ function FormNasabah({ onSelesai }: { onSelesai: () => void }) {
     setGalat(null);
     setMenyimpan(true);
     try {
-      await api.post("/api/nasabah", { nama, noHp: noHp || undefined, dusun: dusun || undefined, alamat: alamat || undefined });
+      await api.post("/api/nasabah", {
+        warga: { nama, noHp: noHp || undefined, dusun: dusun || undefined, alamat: alamat || undefined },
+      });
       onSelesai();
     } catch (err) {
       setGalat(err instanceof ApiError ? err.message : "Gagal menyimpan.");

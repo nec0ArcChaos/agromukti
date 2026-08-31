@@ -4,7 +4,25 @@ import bcrypt from "bcryptjs";
 import { prisma } from "./db";
 import { AuthError, ForbiddenError } from "./errors";
 
-export type Peran = "ADMIN" | "OPERATOR";
+/**
+ * Peran pengguna lintas tiga pilar AgroMukti.
+ *
+ * KEPALA_DESA sengaja dibuat baca-saja: ia memantau dan mencetak laporan
+ * resmi, bukan menginput transaksi.
+ */
+export const PERAN = [
+  "ADMIN",
+  "OPERATOR_SAMPAH",
+  "OPERATOR_ORGANIK",
+  "OPERATOR_TANI",
+  "KEPALA_DESA",
+] as const;
+
+export type Peran = (typeof PERAN)[number];
+
+export function peranValid(nilai: unknown): nilai is Peran {
+  return typeof nilai === "string" && (PERAN as readonly string[]).includes(nilai);
+}
 
 export type Sesi = {
   userId: string;
@@ -72,7 +90,7 @@ export async function bacaSesi(): Promise<Sesi | null> {
       userId: String(payload.userId),
       username: String(payload.username),
       nama: String(payload.nama),
-      role: payload.role === "ADMIN" ? "ADMIN" : "OPERATOR",
+      role: peranValid(payload.role) ? payload.role : "KEPALA_DESA",
     };
   } catch {
     return null;
@@ -107,11 +125,16 @@ export async function bacaSesiTerverifikasi(): Promise<Sesi | null> {
   });
   if (!user || !user.aktif) return null;
 
+  // Fail-closed: peran yang tidak dikenal (mis. sisa data lama) TIDAK
+  // diberi hak apa pun - lebih baik pengguna terkunci dan lapor daripada
+  // diam-diam mendapat akses yang tidak diniatkan.
+  if (!peranValid(user.role)) return null;
+
   return {
     userId: user.id,
     username: user.username,
     nama: user.nama,
-    role: user.role === "ADMIN" ? "ADMIN" : "OPERATOR",
+    role: user.role,
   };
 }
 

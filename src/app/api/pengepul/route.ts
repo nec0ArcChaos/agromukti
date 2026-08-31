@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { route, bacaBody } from "@/server/lib/handler";
 import { sukses } from "@/server/lib/response";
-import { wajibMasuk } from "@/server/lib/auth";
+import { wajibMasuk, wajibPeran } from "@/server/lib/auth";
 import { skemaBuatPengepul } from "@/server/modules/pengepul/pengepul.schema";
 import { daftarPengepul, buatPengepul } from "@/server/modules/pengepul/pengepul.service";
 
@@ -12,7 +12,7 @@ export const GET = route(async (req) => {
 });
 
 export const POST = route(async (req) => {
-  const sesi = await wajibMasuk();
+  const sesi = await wajibPeran("ADMIN", "OPERATOR_SAMPAH");
   const input = skemaBuatPengepul.parse(await bacaBody(req));
   return sukses(await buatPengepul(input, sesi.userId), undefined, 201);
 });

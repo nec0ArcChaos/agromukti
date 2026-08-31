@@ -1,6 +1,6 @@
 import { prisma } from "@/server/lib/db";
 import { AppError } from "@/server/lib/errors";
-import { buatSesi, cocokPassword, hapusSesi, hashPassword, type Sesi } from "@/server/lib/auth";
+import { buatSesi, cocokPassword, hapusSesi, hashPassword, peranValid, type Sesi } from "@/server/lib/auth";
 import { catatAudit } from "@/server/lib/audit";
 import type { InputLogin, InputBuatUser } from "./auth.schema";
 
@@ -18,11 +18,24 @@ export async function login(input: InputLogin, ip?: string): Promise<Sesi> {
     throw new AppError("LOGIN_GAGAL", "Username atau kata sandi salah.", 401);
   }
 
+  // Peran yang tidak dikenal ditolak di sini juga, bukan hanya saat sesi
+  // diverifikasi - supaya akun rusak tidak pernah sempat membuat token.
+  // Diperiksa SETELAH kata sandi cocok: kalau diperiksa lebih dulu, orang
+  // yang belum tentu pemilik akun bisa membedakan "akun ada tapi perannya
+  // rusak" dari "kata sandi salah".
+  if (!peranValid(user.role)) {
+    throw new AppError(
+      "PERAN_TIDAK_VALID",
+      "Peran akun Anda tidak dikenali sistem. Hubungi administrator.",
+      403,
+    );
+  }
+
   const sesi: Sesi = {
     userId: user.id,
     username: user.username,
     nama: user.nama,
-    role: user.role === "ADMIN" ? "ADMIN" : "OPERATOR",
+    role: user.role,
   };
   await buatSesi(sesi);
   await catatAudit({ userId: user.id, aksi: "LOGIN", tabel: "User", recordId: user.id, ip });

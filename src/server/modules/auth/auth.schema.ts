@@ -14,7 +14,9 @@ export const skemaBuatUser = z.object({
     .regex(/^[a-z0-9_.]+$/, "Username hanya huruf kecil, angka, titik, dan garis bawah."),
   password: z.string().min(6, "Kata sandi minimal 6 karakter."),
   nama: z.string().trim().min(1, "Nama wajib diisi."),
-  role: z.enum(["ADMIN", "OPERATOR"]).default("OPERATOR"),
+  role: z
+    .enum(["ADMIN", "OPERATOR_SAMPAH", "OPERATOR_ORGANIK", "OPERATOR_TANI", "KEPALA_DESA"])
+    .default("OPERATOR_SAMPAH"),
 });
 export type InputBuatUser = z.infer<typeof skemaBuatUser>;
 

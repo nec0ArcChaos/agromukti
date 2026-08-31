@@ -9,7 +9,7 @@ import type { z } from "zod";
 type FilterSetoran = z.infer<typeof skemaFilterSetoran>;
 
 const SERTAKAN = {
-  nasabah: { select: { id: true, kode: true, nama: true, dusun: true } },
+  nasabah: { select: { id: true, kode: true, warga: { select: { nama: true, dusun: true } } } },
   operator: { select: { id: true, nama: true } },
   kategoriSampah: { select: { id: true, kode: true, nama: true } },
   pengambilan: { select: { id: true, nomor: true, tanggal: true, pengepul: { select: { nama: true } } } },
@@ -52,10 +52,10 @@ export async function ambilSetoran(id: string) {
  * setoran MENUNGGU yang diikutsertakan.
  */
 export async function buatSetoran(input: InputBuatSetoran, operatorId: string) {
-  const nasabah = await prisma.nasabah.findUnique({ where: { id: input.nasabahId } });
+  const nasabah = await prisma.nasabah.findUnique({ where: { id: input.nasabahId }, include: { warga: { select: { nama: true } } } });
   if (!nasabah) throw new NotFoundError("Nasabah");
   if (nasabah.status !== "AKTIF") {
-    throw new AppError("NASABAH_NONAKTIF", `${nasabah.nama} berstatus nonaktif dan tidak dapat menyetor.`, 409);
+    throw new AppError("NASABAH_NONAKTIF", `${nasabah.warga.nama} berstatus nonaktif dan tidak dapat menyetor.`, 409);
   }
 
   if (input.kategoriSampahId) {

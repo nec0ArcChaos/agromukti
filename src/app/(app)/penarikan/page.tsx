@@ -3,14 +3,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { api, ApiError } from "@/lib/api";
 
-type Nasabah = { id: string; kode: string; nama: string; saldo: number };
+type Nasabah = { id: string; kode: string; saldo: number; warga: { nama: string } };
 type Penarikan = {
   id: string;
   nomor: string;
   jumlah: number;
   metode: string;
   status: string;
-  nasabah: { nama: string; kode: string };
+  nasabah: { kode: string; warga: { nama: string } };
   createdAt: string;
 };
 type Sesi = { role: "ADMIN" | "OPERATOR" };
@@ -91,7 +91,7 @@ export default function HalamanPenarikan() {
             <select className="field" value={nasabahId} onChange={(e) => setNasabahId(e.target.value)} required>
               <option value="">Pilih nasabah...</option>
               {nasabahList.map((n) => (
-                <option key={n.id} value={n.id}>{n.kode} - {n.nama} (saldo Rp {n.saldo.toLocaleString("id-ID")})</option>
+                <option key={n.id} value={n.id}>{n.kode} - {n.warga.nama} (saldo Rp {n.saldo.toLocaleString("id-ID")})</option>
               ))}
             </select>
           </div>
@@ -120,7 +120,7 @@ export default function HalamanPenarikan() {
               {rows.map((p) => (
                 <tr key={p.id}>
                   <td className="font-mono text-xs">{p.nomor}</td>
-                  <td>{p.nasabah.nama}</td>
+                  <td>{p.nasabah.warga.nama}</td>
                   <td className="text-right tabular-nums">Rp {p.jumlah.toLocaleString("id-ID")}</td>
                   <td className="text-xs text-neutral-500">{p.metode}</td>
                   <td>

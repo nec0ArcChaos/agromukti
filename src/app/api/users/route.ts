@@ -1,11 +1,11 @@
 import { route, bacaBody } from "@/server/lib/handler";
 import { sukses } from "@/server/lib/response";
-import { wajibPeran } from "@/server/lib/auth";
+import { wajibMasuk, wajibPeran } from "@/server/lib/auth";
 import { skemaBuatUser } from "@/server/modules/auth/auth.schema";
 import { daftarUser, buatUser } from "@/server/modules/auth/auth.service";
 
 export const GET = route(async () => {
-  await wajibPeran("ADMIN", "OPERATOR");
+  await wajibMasuk();
   return sukses(await daftarUser());
 });
 

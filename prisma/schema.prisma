@@ -1,4 +1,4 @@
-// Sistem Informasi Bank Sampah Anorganik Desa Argamukti
+// AGROMUKTI - Sistem Informasi Terpadu Desa Argamukti
 // KKM Kelompok 45 - Universitas Muhammadiyah Cirebon 2026
 //
 // KONVENSI WAJIB (jangan dilanggar tanpa diskusi):
@@ -38,8 +38,8 @@ model User {
   username     String   @unique
   passwordHash String
   nama         String
-  /// ADMIN | OPERATOR
-  role         String   @default("OPERATOR")
+  /// ADMIN | OPERATOR_SAMPAH | OPERATOR_ORGANIK | OPERATOR_TANI | KEPALA_DESA
+  role         String   @default("OPERATOR_SAMPAH")
   aktif        Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -56,15 +56,10 @@ model User {
 /// Warga penyetor sampah anorganik.
 model Nasabah {
   id            String   @id @default(cuid())
+  /// Identitas warga - nama, alamat, dusun, dan kontak ada di sana.
+  wargaId       String
   /// Format AGM-0001, dibangkitkan lewat tabel Sequence.
   kode          String   @unique
-  nama          String
-  noHp          String?
-  alamat        String?
-  /// Lima dusun di Desa Argamukti. Dipakai untuk laporan partisipasi.
-  dusun         String?
-  rt            String?
-  rw            String?
   tanggalDaftar DateTime @default(now())
   /// AKTIF | NONAKTIF
   status        String   @default("AKTIF")
@@ -75,13 +70,13 @@ model Nasabah {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  warga     Warga            @relation(fields: [wargaId], references: [id])
   setoran   Setoran[]
   mutasi    MutasiTabungan[]
   penarikan Penarikan[]
 
+  @@index([wargaId])
   @@index([status])
-  @@index([dusun])
-  @@index([nama])
 }
 
 /// Label ringan kategori sampah anorganik (plastik, kertas, logam, dst).
@@ -307,11 +302,350 @@ model AuditLog {
 /// JANGAN pakai COUNT(*) + 1 - dua operator yang menyimpan bersamaan akan
 /// mendapat nomor kembar. Nomor diambil di dalam transaksi yang sama.
 model Sequence {
-  /// SETORAN | PENARIKAN | PENGAMBILAN | NASABAH
+  /// SETORAN | PENARIKAN | PENGAMBILAN | NASABAH | PETANI | PERMINTAAN | DISTRIBUSI | PRODUKSI
   tipe          String
   /// YYYYMM, atau "-" untuk sequence yang tidak direset per periode.
   periode       String
   nomorTerakhir Int    @default(0)
 
   @@id([tipe, periode])
+}
+
+// ============================================================
+// DOMAIN: IDENTITAS WARGA (dipakai lintas pilar)
+// ============================================================
+
+/// Identitas tunggal warga Desa Argamukti.
+///
+/// Seorang warga bisa sekaligus menjadi Nasabah bank sampah DAN Petani -
+/// keduanya profil yang menunjuk ke baris Warga yang sama, sehingga tidak
+/// ada data nama/alamat yang terduplikasi antar pilar dan laporan
+/// kontribusi lintas pilar menjadi mungkin.
+///
+/// CATATAN PRIVASI: `nik` sengaja OPSIONAL. Skema PHP lama menjadikannya
+/// NOT NULL UNIQUE dan `api.php` mengekspos seluruh NIK petani tanpa
+/// autentikasi. NIK adalah data pribadi di bawah UU PDP - hanya diisi bila
+/// benar-benar diperlukan, dan tidak pernah dikembalikan endpoint publik.
+model Warga {
+  id        String   @id @default(cuid())
+  nik       String?  @unique
+  nama      String
+  alamat    String?  @db.Text
+  /// Lima dusun di Desa Argamukti.
+  dusun     String?
+  rt        String?
+  rw        String?
+  noHp      String?
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nasabah Nasabah[]
+  petani  Petani[]
+
+  @@index([nama])
+  @@index([dusun])
+  @@index([aktif])
+}
+
+// ============================================================
+// PILAR: PERTANIAN & DISTRIBUSI PUPUK  (proker Ayu Rianti)
+// ============================================================
+
+/// Profil petani. Identitasnya ada di Warga.
+model Petani {
+  id           String   @id @default(cuid())
+  wargaId      String
+  /// Format TN-0001.
+  kode         String   @unique
+  kelompokTani String?
+  /// AKTIF | NONAKTIF
+  status       String   @default("AKTIF")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  warga      Warga             @relation(fields: [wargaId], references: [id])
+  lahan      Lahan[]
+  panen      Panen[]
+  permintaan PermintaanPupuk[]
+
+  @@index([wargaId])
+  @@index([status])
+}
+
+/// Komoditas hortikultura yang diusahakan warga.
+model Komoditas {
+  id              String   @id @default(cuid())
+  kode            String   @unique
+  nama            String
+  deskripsi       String?  @db.Text
+  /// Dosis pupuk anjuran per hektare, dipakai menghitung usulan alokasi.
+  dosisPupukPerHa Decimal  @default(5) @db.Decimal(10, 2)
+  aktif           Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  lahan Lahan[]
+  panen Panen[]
+
+  @@index([aktif])
+}
+
+/// Lahan garapan milik/dikelola petani.
+model Lahan {
+  id          String   @id @default(cuid())
+  petaniId    String
+  komoditasId String
+  luas        Decimal  @db.Decimal(12, 2)
+  /// M2 | HA
+  satuan      String   @default("M2")
+  lokasi      String?  @db.Text
+  /// AKTIF | NONAKTIF
+  status      String   @default("AKTIF")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  petani    Petani    @relation(fields: [petaniId], references: [id])
+  komoditas Komoditas @relation(fields: [komoditasId], references: [id])
+
+  @@index([petaniId])
+  @@index([komoditasId])
+  @@index([status])
+}
+
+/// Pencatatan hasil panen per komoditas.
+model Panen {
+  id           String   @id @default(cuid())
+  petaniId     String
+  komoditasId  String
+  jumlahPanen  Decimal  @db.Decimal(12, 2)
+  /// KG | KUINTAL | TON
+  satuan       String   @default("KG")
+  tanggalPanen DateTime
+  keterangan   String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  petani    Petani    @relation(fields: [petaniId], references: [id])
+  komoditas Komoditas @relation(fields: [komoditasId], references: [id])
+
+  @@index([petaniId, tanggalPanen])
+  @@index([komoditasId])
+  @@index([tanggalPanen])
+}
+
+/// Produk pupuk yang disimpan dan didistribusikan.
+/// Stoknya diisi oleh hasil produksi pilar organik (lihat ProduksiPupuk) -
+/// inilah titik sambung ekonomi sirkular antar pilar.
+model ProdukPupuk {
+  id        String   @id @default(cuid())
+  kode      String   @unique
+  nama      String
+  /// KOMPOS_PADAT | PUPUK_CAIR
+  jenis     String   @default("KOMPOS_PADAT")
+  deskripsi String?  @db.Text
+  harga     Int      @default(0)
+  /// KG | LITER | KARUNG
+  satuan    String   @default("KG")
+  /// CACHE. Kebenaran ada di MutasiStokPupuk.
+  stok      Decimal  @default(0) @db.Decimal(12, 2)
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mutasiStok       MutasiStokPupuk[]
+  permintaanDetail PermintaanPupukDetail[]
+  distribusiDetail DistribusiPupukDetail[]
+
+  @@index([aktif])
+}
+
+/// Buku besar stok pupuk. Menggantikan tabel `stok_pupuk`, `mutasi_stok`
+/// (proker Ayu) dan `inventaris` (proker Bima) yang sebelumnya terpisah
+/// dan saling menduplikasi angka stok yang sama.
+model MutasiStokPupuk {
+  id            String   @id @default(cuid())
+  produkPupukId String
+  tanggal       DateTime @default(now())
+  /// MASUK | KELUAR | PENYESUAIAN
+  arah          String
+  jumlah        Decimal  @db.Decimal(12, 2)
+  /// PRODUKSI | DISTRIBUSI | PENYESUAIAN | SALDO_AWAL
+  refTipe       String?
+  refId         String?
+  sumber        String?
+  keterangan    String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  produkPupuk ProdukPupuk @relation(fields: [produkPupukId], references: [id])
+
+  @@index([produkPupukId, tanggal])
+  @@index([refTipe, refId])
+}
+
+/// Pengajuan pupuk oleh petani (bisa lewat portal warga tanpa login).
+model PermintaanPupuk {
+  id          String   @id @default(cuid())
+  /// Format PMT-202609-0001.
+  nomor       String   @unique
+  petaniId    String
+  tanggal     DateTime @default(now())
+  /// DIAJUKAN | DIPROSES | DISETUJUI | DITOLAK | SELESAI
+  status      String   @default("DIAJUKAN")
+  alasanTolak String?  @db.Text
+  keterangan  String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  petani     Petani                  @relation(fields: [petaniId], references: [id])
+  detail     PermintaanPupukDetail[]
+  distribusi DistribusiPupuk[]
+
+  @@index([petaniId, tanggal])
+  @@index([status])
+}
+
+model PermintaanPupukDetail {
+  id            String  @id @default(cuid())
+  permintaanId  String
+  produkPupukId String
+  jumlah        Decimal @db.Decimal(12, 2)
+  satuan        String  @default("KG")
+
+  permintaan  PermintaanPupuk @relation(fields: [permintaanId], references: [id], onDelete: Cascade)
+  produkPupuk ProdukPupuk     @relation(fields: [produkPupukId], references: [id])
+
+  @@index([permintaanId])
+}
+
+/// Realisasi penyaluran pupuk atas sebuah permintaan yang disetujui.
+model DistribusiPupuk {
+  id                String   @id @default(cuid())
+  /// Format DST-202609-0001.
+  nomor             String   @unique
+  permintaanId      String
+  tanggalDistribusi DateTime @default(now())
+  /// DIPROSES | DIKIRIM | DITERIMA | DIBATALKAN
+  status            String   @default("DIPROSES")
+  keterangan        String?  @db.Text
+  operatorId        String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  permintaan PermintaanPupuk         @relation(fields: [permintaanId], references: [id])
+  detail     DistribusiPupukDetail[]
+
+  @@index([permintaanId])
+  @@index([status])
+  @@index([tanggalDistribusi])
+}
+
+model DistribusiPupukDetail {
+  id            String  @id @default(cuid())
+  distribusiId  String
+  produkPupukId String
+  jumlah        Decimal @db.Decimal(12, 2)
+  satuan        String  @default("KG")
+
+  distribusi  DistribusiPupuk @relation(fields: [distribusiId], references: [id], onDelete: Cascade)
+  produkPupuk ProdukPupuk     @relation(fields: [produkPupukId], references: [id])
+
+  @@index([distribusiId])
+}
+
+/// Artikel / tips pertanian untuk portal publik.
+model Artikel {
+  id               String   @id @default(cuid())
+  judul            String
+  konten           String   @db.Text
+  gambar           String?
+  kategori         String?
+  tanggalPublikasi DateTime @default(now())
+  terbit           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([terbit, tanggalPublikasi])
+}
+
+// ============================================================
+// PILAR: SAMPAH ORGANIK & PRODUKSI PUPUK  (proker Bima)
+//
+// CATATAN: skema di bawah adalah REKONSTRUKSI dari cara aplikasi AgroMukti
+// meng-query database `db_prokerkkm` milik Bima (kkm_buat_pupuk.php,
+// kkm_umkm.php). Berkas asli belum tersedia, sehingga kolom yang tidak
+// pernah disentuh AgroMukti tidak terlihat dari sini dan perlu
+// dikonfirmasi ke penyusunnya.
+//
+// Perbedaan yang sengaja diambil dari aslinya: `jumlahsampahorganik` di
+// sistem lama hanya SATU BARIS penghitung yang di-UPDATE langsung,
+// sehingga riwayatnya hilang dan angkanya tidak bisa diaudit. Di sini
+// diganti buku besar mutasi - pola yang sama dengan bank sampah.
+// ============================================================
+
+/// Buku besar stok bahan baku sampah organik.
+model MutasiSampahOrganik {
+  id         String   @id @default(cuid())
+  tanggal    DateTime @default(now())
+  /// MASUK (setoran warga) | KELUAR (dipakai produksi) | KOREKSI
+  arah       String
+  beratKg    Decimal  @db.Decimal(12, 2)
+  /// Warga penyetor, bila setoran berasal dari warga tertentu.
+  wargaId    String?
+  /// SETORAN | PRODUKSI | KOREKSI
+  refTipe    String?
+  refId      String?
+  sumber     String?
+  keterangan String?  @db.Text
+  operatorId String?
+  createdAt  DateTime @default(now())
+
+  @@index([tanggal])
+  @@index([arah])
+  @@index([refTipe, refId])
+}
+
+/// Satu siklus produksi pupuk dari sampah organik.
+model ProduksiPupuk {
+  id                  String    @id @default(cuid())
+  /// Format PRD-202609-0001.
+  kode                String    @unique
+  tanggalMulai        DateTime
+  estimasiSelesai     DateTime?
+  tanggalSelesai      DateTime?
+  beratSampahOrganik  Decimal   @db.Decimal(12, 2)
+  estimasiPupukCair   Decimal   @default(0) @db.Decimal(12, 2)
+  estimasiPupukKasar  Decimal   @default(0) @db.Decimal(12, 2)
+  pupukCairAktual     Decimal?  @db.Decimal(12, 2)
+  pupukKasarAktual    Decimal?  @db.Decimal(12, 2)
+  /// DIHITUNG SISTEM saat panen, tidak pernah diinput.
+  rendemenPersen      Decimal?  @db.Decimal(5, 2)
+  /// PROSES | SELESAI | GAGAL
+  status              String    @default("PROSES")
+  keterangan          String?   @db.Text
+  operatorId          String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([status])
+  @@index([tanggalMulai])
+}
+
+/// Produk UMKM desa (mis. Wajik Tomat) - proker Bima.
+model ProdukUmkm {
+  id        String   @id @default(cuid())
+  kode      String   @unique
+  nama      String
+  kategori  String?
+  deskripsi String?  @db.Text
+  harga     Int      @default(0)
+  stok      Decimal  @default(0) @db.Decimal(12, 2)
+  satuan    String   @default("PCS")
+  foto      String?
+  /// TERSEDIA | HABIS | NONAKTIF
+  status    String   @default("TERSEDIA")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
 }

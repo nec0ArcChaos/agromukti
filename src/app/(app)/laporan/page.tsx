@@ -45,7 +45,7 @@ export default async function HalamanLaporan() {
             <thead><tr><th>Nasabah</th><th>Dusun</th><th className="text-right">Saldo</th></tr></thead>
             <tbody>
               {tabungan.rows.slice(0, 10).map((n) => (
-                <tr key={n.id}><td>{n.nama}</td><td className="text-xs text-neutral-500">{n.dusun ?? "-"}</td><td className="text-right tabular-nums">{formatRupiah(n.saldo)}</td></tr>
+                <tr key={n.id}><td>{n.warga.nama}</td><td className="text-xs text-neutral-500">{n.warga.dusun ?? "-"}</td><td className="text-right tabular-nums">{formatRupiah(n.saldo)}</td></tr>
               ))}
               {tabungan.rows.length === 0 && <tr><td colSpan={3} className="py-6 text-center text-neutral-400">Belum ada nasabah.</td></tr>}
             </tbody>

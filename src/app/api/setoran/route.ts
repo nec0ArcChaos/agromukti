@@ -1,7 +1,7 @@
 import { route, bacaBody } from "@/server/lib/handler";
 import { bacaQuery } from "@/server/lib/pagination";
 import { sukses } from "@/server/lib/response";
-import { wajibMasuk } from "@/server/lib/auth";
+import { wajibMasuk, wajibPeran } from "@/server/lib/auth";
 import { skemaBuatSetoran, skemaFilterSetoran } from "@/server/modules/setoran/setoran.schema";
 import { daftarSetoran, buatSetoran } from "@/server/modules/setoran/setoran.service";
 
@@ -13,7 +13,7 @@ export const GET = route(async (req) => {
 });
 
 export const POST = route(async (req) => {
-  const sesi = await wajibMasuk();
+  const sesi = await wajibPeran("ADMIN", "OPERATOR_SAMPAH");
   const input = skemaBuatSetoran.parse(await bacaBody(req));
   return sukses(await buatSetoran(input, sesi.userId), undefined, 201);
 });

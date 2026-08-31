@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { api, ApiError } from "@/lib/api";
 
-type Nasabah = { id: string; kode: string; nama: string; dusun: string | null };
+type Nasabah = { id: string; kode: string; warga: { nama: string; dusun: string | null } };
 type Kategori = { id: string; kode: string; nama: string };
 type Setoran = {
   id: string;
@@ -12,7 +12,7 @@ type Setoran = {
   beratKg: string;
   status: string;
   nilaiAlokasi: number | null;
-  nasabah: { nama: string; kode: string };
+  nasabah: { kode: string; warga: { nama: string } };
   kategoriSampah: { nama: string } | null;
 };
 
@@ -95,7 +95,7 @@ export default function HalamanSetoran() {
           <select className="field" value={nasabahId} onChange={(e) => setNasabahId(e.target.value)} required>
             <option value="">Pilih nasabah...</option>
             {nasabahList.map((n) => (
-              <option key={n.id} value={n.id}>{n.kode} - {n.nama} {n.dusun ? `(${n.dusun})` : ""}</option>
+              <option key={n.id} value={n.id}>{n.kode} - {n.warga.nama} {n.warga.dusun ? `(${n.warga.dusun})` : ""}</option>
             ))}
           </select>
         </div>
@@ -136,7 +136,7 @@ export default function HalamanSetoran() {
               {setoranList.map((s) => (
                 <tr key={s.id}>
                   <td className="font-mono text-xs">{s.nomor}</td>
-                  <td>{s.nasabah.nama}</td>
+                  <td>{s.nasabah.warga.nama}</td>
                   <td className="text-xs text-neutral-500">{s.kategoriSampah?.nama ?? "-"}</td>
                   <td className="text-right tabular-nums">{s.beratKg} kg</td>
                   <td>

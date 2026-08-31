@@ -9,10 +9,10 @@ type SetoranMenunggu = {
   nomor: string;
   beratKg: string;
   tanggal: string;
-  nasabah: { id: string; kode: string; nama: string };
+  nasabah: { id: string; kode: string; warga: { nama: string } };
   kategoriSampah: { nama: string } | null;
 };
-type PengambilanDetail = { id: string; nomor: string; beratKg: string; nilaiAlokasi: number | null; nasabah: { nama: string; kode: string } };
+type PengambilanDetail = { id: string; nomor: string; beratKg: string; nilaiAlokasi: number | null; nasabah: { kode: string; warga: { nama: string } } };
 type Pengambilan = {
   id: string;
   nomor: string;
@@ -143,7 +143,7 @@ export default function HalamanPengambilan() {
                   <tr key={s.id} className="cursor-pointer" onClick={() => toggle(s.id)}>
                     <td><input type="checkbox" checked={terpilih.has(s.id)} onChange={() => toggle(s.id)} onClick={(e) => e.stopPropagation()} /></td>
                     <td className="font-mono text-xs">{s.nomor}</td>
-                    <td>{s.nasabah.kode} - {s.nasabah.nama}</td>
+                    <td>{s.nasabah.kode} - {s.nasabah.warga.nama}</td>
                     <td className="text-xs text-neutral-500">{s.kategoriSampah?.nama ?? "-"}</td>
                     <td className="text-right tabular-nums">{s.beratKg} kg</td>
                   </tr>
@@ -185,7 +185,7 @@ export default function HalamanPengambilan() {
                           <thead><tr><th>Nasabah</th><th className="text-right">Berat</th><th className="text-right">Nilai alokasi</th></tr></thead>
                           <tbody>
                             {p.setoran.map((s) => (
-                              <tr key={s.id}><td>{s.nasabah.kode} - {s.nasabah.nama}</td><td className="text-right tabular-nums">{s.beratKg} kg</td><td className="text-right tabular-nums">Rp {(s.nilaiAlokasi ?? 0).toLocaleString("id-ID")}</td></tr>
+                              <tr key={s.id}><td>{s.nasabah.kode} - {s.nasabah.warga.nama}</td><td className="text-right tabular-nums">{s.beratKg} kg</td><td className="text-right tabular-nums">Rp {(s.nilaiAlokasi ?? 0).toLocaleString("id-ID")}</td></tr>
                             ))}
                           </tbody>
                         </table>

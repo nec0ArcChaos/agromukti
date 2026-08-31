@@ -18,7 +18,7 @@ const SERTAKAN = {
       nomor: true,
       beratKg: true,
       nilaiAlokasi: true,
-      nasabah: { select: { id: true, kode: true, nama: true } },
+      nasabah: { select: { id: true, kode: true, warga: { select: { nama: true } } } },
     },
   },
 } satisfies Prisma.PengambilanPengepulInclude;
@@ -66,7 +66,7 @@ export async function buatPengambilan(input: InputBuatPengambilan, operatorId: s
   const idUnik = [...new Set(input.setoranIds)];
   const setoranList = await prisma.setoran.findMany({
     where: { id: { in: idUnik } },
-    include: { nasabah: { select: { id: true, nama: true, saldo: true } } },
+    include: { nasabah: { select: { id: true, saldo: true, warga: { select: { nama: true } } } } },
   });
   if (setoranList.length !== idUnik.length) {
     throw new NotFoundError("Setoran");
@@ -186,13 +186,13 @@ export async function batalPengambilan(id: string, alasan: string, userId: strin
     totalAlokasiPerNasabah.set(s.nasabahId, (totalAlokasiPerNasabah.get(s.nasabahId) ?? 0) + (s.nilaiAlokasi ?? 0));
   }
 
-  const nasabahList = await prisma.nasabah.findMany({ where: { id: { in: [...totalAlokasiPerNasabah.keys()] } } });
+  const nasabahList = await prisma.nasabah.findMany({ where: { id: { in: [...totalAlokasiPerNasabah.keys()] } }, include: { warga: { select: { nama: true } } } });
   for (const n of nasabahList) {
     const totalAlokasi = totalAlokasiPerNasabah.get(n.id)!;
     if (n.saldo < totalAlokasi) {
       throw new AppError(
         "SALDO_TIDAK_CUKUP_UNTUK_BATAL",
-        `Saldo ${n.nama} saat ini ${formatRupiah(n.saldo)}, kurang dari total kredit ` +
+        `Saldo ${n.warga.nama} saat ini ${formatRupiah(n.saldo)}, kurang dari total kredit ` +
           `${formatRupiah(totalAlokasi)} dari pengambilan ini. Kemungkinan sudah ada penarikan setelahnya.`,
         409,
       );
