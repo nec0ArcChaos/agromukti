@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Perancangan Sistem – AgroMukti Desa Argamukti</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #047857;
+            --dark-bg: #09121a;
+            --card-dark: #132231;
+            --border-dark: #1e3a5f;
+            --text-white: #ffffff;
+            --text-sub: #94a3b8;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-white);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-dark);
+        }
+        .header h1 { font-size: 2.2rem; font-weight: 800; color: white; margin-bottom: 8px; }
+        .header p { font-size: 0.95rem; color: var(--text-sub); }
+        .header .badge { display: inline-block; padding: 6px 16px; background: rgba(16,185,129,0.15); border: 1px solid var(--primary); border-radius: 20px; color: #34d399; font-size: 0.8rem; font-weight: 700; margin-bottom: 12px; }
+
+        .diagram-section {
+            background: var(--card-dark);
+            border: 1px solid var(--border-dark);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+        .diagram-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .diagram-title i { color: var(--primary); }
+        .diagram-desc { font-size: 0.85rem; color: var(--text-sub); margin-bottom: 24px; border-bottom: 1px solid var(--border-dark); padding-bottom: 14px; }
+
+        .mermaid {
+            background: #0d1926;
+            border-radius: 14px;
+            padding: 24px;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-print {
+            position: fixed;
+            bottom: 30px; right: 30px;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(16,185,129,0.4);
+            font-family: 'Poppins', sans-serif;
+            display: flex; align-items: center; gap: 8px;
+            z-index: 1000;
+        }
+        .btn-print:hover { transform: translateY(-2px); }
+
+        @media print {
+            .btn-print { display: none; }
+            body { background: white; color: black; }
+            .diagram-section { background: white; border: 1px solid #ccc; box-shadow: none; color: black; }
+            .diagram-title { color: black; }
+            .diagram-desc { color: #555; }
+            .mermaid { background: white; }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="btn-print" onclick="window.print()"><i class="fa-solid fa-print"></i> Cetak / Screenshot Diagram</button>
+
+    <div class="container">
+        <div class="header">
+            <span class="badge">DOKUMEN PERANCANGAN SISTEM (TEKNIK INFORMATIKA)</span>
+            <h1>Visual Perancangan SI AgroMukti</h1>
+            <p>Diagram Konteks, DFD Level 1, Use Case UML, Flowchart System & ERD Database Desa Argamukti</p>
+        </div>
+
+        <!-- 1. DFD LEVEL 0 -->
+        <div class="diagram-section">
+            <div class="diagram-title"><i class="fa-solid fa-sitemap"></i> 1. Diagram Konteks (DFD Level 0)</div>
+            <div class="diagram-desc">Menggambarkan batasan sistem dan interaksi antara entitas luar (Perangkat Desa, Kepala Desa, Kelompok Tani, & Publik) dengan Sistem AgroMukti.</div>
+            <div class="mermaid">
+            graph TD
+                E1[👨‍💼 Perangkat Desa]
+                E2[🏛️ Kepala Desa]
+                E3[🌾 Kelompok Tani]
+                E4[🌐 Pengunjung Publik]
+
+                SYS((Sistem Informasi Pertanian &<br>Distribusi Pupuk AgroMukti<br>Desa Argamukti))
+
+                E1 -->|Data Petani, Lahan, Stok Pupuk| SYS
+                E2 -->|Verifikasi & Request Laporan| SYS
+                E3 -->|Pengajuan Pupuk, Input Panen| SYS
+                E4 -->|Pencarian Status Pupuk| SYS
+
+                SYS -->|Status Pengajuan, Rekap Data| E1
+                SYS -->|Dashboard Eksekutif, Laporan Kades| E2
+                SYS -->|Status Alokasi Pupuk, Riwayat Panen| E3
+                SYS -->|Katalog Komoditas, Weather API, Status| E4
+            </div>
+        </div>
+
+        <!-- 2. DFD LEVEL 1 -->
+        <div class="diagram-section">
+            <div class="diagram-title"><i class="fa-solid fa-diagram-project"></i> 2. Data Flow Diagram (DFD Level 1)</div>
+            <div class="diagram-desc">Rincian proses internal sistem: Otentikasi, Kelola Master Data, Transaksi Panen, Distribusi Pupuk, dan Eksekutif Pelaporan.</div>
+            <div class="mermaid">
+            graph TD
+                Admin[Perangkat Desa]
+                Kades[Kepala Desa]
+                Petani[Kelompok Tani]
+                Publik[Publik / Warga]
+
+                DS_User[(D1: Users)]
+                DS_Petani[(D2: Petani)]
+                DS_Lahan[(D3: Lahan)]
+                DS_Panen[(D5: Panen)]
+                DS_Pupuk[(D6: Pupuk)]
+                DS_Distribusi[(D7: Distribusi)]
+
+                P1((1.0 Otentikasi Role))
+                P2((2.0 Kelola Master Data))
+                P3((3.0 Transaksi Panen))
+                P4((4.0 Distribusi Pupuk))
+                P5((5.0 Pelaporan Kades))
+
+                Admin -->|Login| P1
+                Kades -->|Login| P1
+                Petani -->|Login| P1
+                P1 <-->|Verify| DS_User
+
+                Admin -->|Input Petani & Lahan| P2
+                P2 <--> DS_Petani
+                P2 <--> DS_Lahan
+
+                Admin -->|Input Panen| P3
+                Petani -->|Input Panen| P3
+                P3 --> DS_Panen
+
+                Petani -->|Pengajuan Pupuk| P4
+                Publik -->|Form Pengajuan Publik| P4
+                P4 --> DS_Distribusi
+                Admin -->|Setujui / Disalurkan| P4
+                P4 --> DS_Pupuk
+
+                P5 <--> DS_Panen
+                P5 <--> DS_Distribusi
+                P5 -->|Cetak Laporan Resmi| Kades
+            </div>
+        </div>
+
+        <!-- 3. USE CASE UML -->
+        <div class="diagram-section">
+            <div class="diagram-title"><i class="fa-solid fa-users-gear"></i> 3. Use Case Diagram (UML)</div>
+            <div class="diagram-desc">Pemetaan hak akses fungsionalitas sistem berdasarkan 4 Aktor Pengguna.</div>
+            <div class="mermaid">
+            graph LR
+                actor1[👨‍💼 Perangkat Desa]
+                actor2[🏛️ Kepala Desa]
+                actor3[🌾 Kelompok Tani]
+                actor4[🌐 Publik]
+
+                subgraph SISTEM AGROMUKTI
+                    uc1((Login Multi-Role))
+                    uc2((Kelola Petani))
+                    uc3((Kelola Lahan))
+                    uc4((Catat Panen))
+                    uc5((Kelola Stok Pupuk))
+                    uc6((Proses Pengajuan Pupuk))
+                    uc7((Dashboard Eksekutif))
+                    uc8((Cetak Laporan Resmi))
+                    uc9((Form Pupuk Publik))
+                    uc10((Cek Status Pupuk))
+                    uc11((Live Weather API))
+                end
+
+                actor1 --> uc1
+                actor1 --> uc2
+                actor1 --> uc3
+                actor1 --> uc4
+                actor1 --> uc5
+                actor1 --> uc6
+                actor1 --> uc8
+
+                actor2 --> uc1
+                actor2 --> uc7
+                actor2 --> uc8
+
+                actor3 --> uc1
+                actor3 --> uc4
+                actor3 --> uc6
+
+                actor4 --> uc9
+                actor4 --> uc10
+                actor4 --> uc11
+            </div>
+        </div>
+
+        <!-- 4. ERD DATABASE -->
+        <div class="diagram-section">
+            <div class="diagram-title"><i class="fa-solid fa-database"></i> 4. Entity Relationship Diagram (ERD)</div>
+            <div class="diagram-desc">Struktur entitas tabel MySQL agromukti_db beserta relasi dan kardinalitasnya.</div>
+            <div class="mermaid">
+            erDiagram
+                USERS {
+                    int id PK
+                    string username UK
+                    string password
+                    enum role
+                }
+                PETANI {
+                    int id PK
+                    string nik UK
+                    string nama
+                    string kelompok_tani
+                    string dusun
+                }
+                LAHAN {
+                    int id PK
+                    int petani_id FK
+                    decimal luas_lahan
+                    string lokasi_blok
+                }
+                KOMODITAS {
+                    int id PK
+                    string nama_komoditas
+                    enum jenis
+                }
+                PANEN {
+                    int id PK
+                    int petani_id FK
+                    int komoditas_id FK
+                    decimal jumlah_panen
+                    date tanggal_panen
+                }
+                PUPUK {
+                    int id PK
+                    string jenis_pupuk
+                    decimal stok
+                }
+                DISTRIBUSI_PUPUK {
+                    int id PK
+                    int petani_id FK
+                    int pupuk_id FK
+                    decimal jumlah_diminta
+                    enum status
+                }
+
+                PETANI ||--o{ LAHAN : "memiliki"
+                PETANI ||--o{ PANEN : "mencatat"
+                KOMODITAS ||--o{ PANEN : "dikomoditaskan"
+                PETANI ||--o{ DISTRIBUSI_PUPUK : "mengajukan"
+                PUPUK ||--o{ DISTRIBUSI_PUPUK : "dialokasikan"
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose'
+        });
+    </script>
+</body>
+</html>

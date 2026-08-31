@@ -1,0 +1,317 @@
+// Sistem Informasi Bank Sampah Anorganik Desa Argamukti
+// KKM Kelompok 45 - Universitas Muhammadiyah Cirebon 2026
+//
+// KONVENSI WAJIB (jangan dilanggar tanpa diskusi):
+//  1. Nominal uang = Int, satuan rupiah utuh. TIDAK PERNAH Float.
+//  2. Berat        = Decimal(10,2), satuan kilogram.
+//  3. TIDAK ADA enum Prisma. Semua status/kategori = String, divalidasi Zod.
+//     Alasan: SQLite tidak mendukung enum, menjaga pintu darurat "portabel
+//     tanpa hosting" yang dijanjikan proposal tetap terbuka.
+//  4. Data transaksi TIDAK PERNAH dihapus. Hanya dibatalkan (status VOID)
+//     dengan mutasi pembalik. Buku besar hanya bertambah.
+//
+// ALUR NILAI (berbeda dari kebanyakan bank sampah konvensional):
+//  Setoran HANYA mencatat berat saat nasabah menyetor - BELUM ada nilai
+//  rupiah, karena bank sampah ini tidak menetapkan harga sendiri. Nilai
+//  baru muncul saat pengepul benar-benar datang dan membayar (lihat
+//  PengambilanPengepul), lalu dibagi proporsional ke tiap nasabah menurut
+//  berat setorannya. Konsekuensinya: kas SELALU cukup menutupi kredit yang
+//  baru saja dituliskan, karena kredit hanya terjadi bersamaan dengan uang
+//  masuk dari pengepul - tidak pernah mendahuluinya.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// DOMAIN: DATA INDUK
+// ============================================================
+
+/// Operator dan admin sistem. Nasabah TIDAK punya akun.
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  nama         String
+  /// ADMIN | OPERATOR
+  role         String   @default("OPERATOR")
+  aktif        Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  setoranDibuat      Setoran[]              @relation("SetoranOperator")
+  pengambilanDibuat  PengambilanPengepul[]  @relation("PengambilanOperator")
+  penarikanDiajukan  Penarikan[]            @relation("PenarikanPengaju")
+  penarikanDisetujui Penarikan[]            @relation("PenarikanPenyetuju")
+  auditLog           AuditLog[]
+
+  @@index([aktif])
+}
+
+/// Warga penyetor sampah anorganik.
+model Nasabah {
+  id            String   @id @default(cuid())
+  /// Format AGM-0001, dibangkitkan lewat tabel Sequence.
+  kode          String   @unique
+  nama          String
+  noHp          String?
+  alamat        String?
+  /// Lima dusun di Desa Argamukti. Dipakai untuk laporan partisipasi.
+  dusun         String?
+  rt            String?
+  rw            String?
+  tanggalDaftar DateTime @default(now())
+  /// AKTIF | NONAKTIF
+  status        String   @default("AKTIF")
+  /// CACHE, bukan sumber kebenaran. Kebenaran ada di MutasiTabungan.
+  /// Wajib ada perintah rekonsiliasi yang menghitung ulang dari mutasi.
+  saldo         Int      @default(0)
+  catatan       String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  setoran   Setoran[]
+  mutasi    MutasiTabungan[]
+  penarikan Penarikan[]
+
+  @@index([status])
+  @@index([dusun])
+  @@index([nama])
+}
+
+/// Label ringan kategori sampah anorganik (plastik, kertas, logam, dst).
+/// Murni untuk komposisi laporan - TIDAK ada harga di sini. Harga
+/// ditentukan pengepul saat pengambilan, bukan oleh bank sampah.
+model KategoriSampah {
+  id        String   @id @default(cuid())
+  kode      String   @unique
+  nama      String
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  setoran Setoran[]
+
+  @@index([aktif])
+}
+
+/// Pengepul yang membeli sampah anorganik terkumpul.
+model Pengepul {
+  id        String   @id @default(cuid())
+  kode      String   @unique
+  nama      String
+  noHp      String?
+  alamat    String?
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pengambilan PengambilanPengepul[]
+
+  @@index([aktif])
+}
+
+/// Konfigurasi tunggal sistem. Selalu tepat satu baris (id = "SINGLETON").
+model Pengaturan {
+  id               String   @id @default("SINGLETON")
+  namaBankSampah   String   @default("Bank Sampah Desa Argamukti")
+  alamat           String?  @db.Text
+  desa             String   @default("Argamukti")
+  kecamatan        String   @default("Argapura")
+  kabupaten        String   @default("Majalengka")
+  kepalaDesa       String?
+  ketuaBankSampah  String?
+  /// Batas minimal satu kali penarikan, rupiah.
+  minimalPenarikan Int      @default(10000)
+  /// Saldo minimal yang harus tersisa di rekening nasabah.
+  saldoMinimum     Int      @default(0)
+  updatedAt        DateTime @updatedAt
+}
+
+// ============================================================
+// DOMAIN: SETORAN, PENGAMBILAN PENGEPUL & TABUNGAN
+// ============================================================
+
+/// Setoran sampah anorganik dari nasabah. HANYA mencatat berat - belum
+/// ada nilai rupiah, sampai pengepul benar-benar membayar (lihat status).
+model Setoran {
+  id               String    @id @default(cuid())
+  /// Format ST-202608-0001, dibangkitkan lewat tabel Sequence.
+  nomor            String    @unique
+  nasabahId        String
+  kategoriSampahId String?
+  tanggal          DateTime  @default(now())
+  beratKg          Decimal   @db.Decimal(10, 2)
+  /// MENUNGGU (masih di bank sampah) | DIPROSES (sudah dibeli pengepul,
+  /// nasabah sudah dikredit) | VOID (dibatalkan)
+  status           String    @default("MENUNGGU")
+  /// Bagian dari totalNilai pengambilan pengepul, dibagi proporsional
+  /// menurut berat. Diisi HANYA saat status berubah menjadi DIPROSES.
+  nilaiAlokasi     Int?
+  alasanBatal      String?   @db.Text
+  catatan          String?   @db.Text
+  operatorId       String
+  pengambilanId    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  nasabah        Nasabah              @relation(fields: [nasabahId], references: [id])
+  kategoriSampah KategoriSampah?      @relation(fields: [kategoriSampahId], references: [id])
+  operator       User                 @relation("SetoranOperator", fields: [operatorId], references: [id])
+  pengambilan    PengambilanPengepul? @relation(fields: [pengambilanId], references: [id])
+
+  @@index([nasabahId, tanggal])
+  @@index([status])
+  @@index([tanggal])
+  @@index([pengambilanId])
+}
+
+/// Satu kedatangan pengepul yang membeli borongan sampah dari banyak
+/// nasabah sekaligus. Nilai totalNilai (yang BENAR-BENAR dibayarkan
+/// pengepul) dibagi proporsional ke tiap Setoran yang diikutsertakan,
+/// menurut porsi beratnya - lihat pengambilan.service.ts untuk algoritma
+/// pembagian yang menjamin jumlah alokasi selalu tepat sama dengan
+/// totalNilai (tidak meleset karena pembulatan).
+model PengambilanPengepul {
+  id           String   @id @default(cuid())
+  /// Format PP-202608-0001.
+  nomor        String   @unique
+  pengepulId   String
+  tanggal      DateTime @default(now())
+  totalBeratKg Decimal  @db.Decimal(10, 2)
+  totalNilai   Int
+  /// POSTED | VOID
+  status       String   @default("POSTED")
+  alasanBatal  String?  @db.Text
+  catatan      String?  @db.Text
+  operatorId   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  pengepul Pengepul  @relation(fields: [pengepulId], references: [id])
+  operator User      @relation("PengambilanOperator", fields: [operatorId], references: [id])
+  setoran  Setoran[]
+
+  @@index([pengepulId, tanggal])
+  @@index([tanggal])
+  @@index([status])
+}
+
+/// BUKU BESAR SALDO NASABAH - sumber kebenaran tunggal.
+/// Hanya bertambah; tidak pernah diubah atau dihapus.
+model MutasiTabungan {
+  id           String   @id @default(cuid())
+  nasabahId    String
+  tanggal      DateTime @default(now())
+  /// PENGAMBILAN_PENGEPUL | PENARIKAN | KOREKSI | PEMBATALAN
+  jenis        String
+  /// Mengurangi saldo (penarikan, pembatalan).
+  debit        Int      @default(0)
+  /// Menambah saldo (hasil setoran yang sudah dibeli pengepul).
+  kredit       Int      @default(0)
+  /// Saldo berjalan setelah mutasi ini. Memudahkan cetak buku tabungan.
+  saldoSesudah Int
+  /// PENGAMBILAN | PENARIKAN - menunjuk dokumen sumber.
+  refTipe      String?
+  refId        String?
+  keterangan   String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  nasabah Nasabah @relation(fields: [nasabahId], references: [id])
+
+  @@index([nasabahId, tanggal])
+  @@index([refTipe, refId])
+}
+
+/// Pengajuan dan pencairan saldo tabungan.
+model Penarikan {
+  id            String    @id @default(cuid())
+  /// Format TR-202608-0001.
+  nomor         String    @unique
+  nasabahId     String
+  tanggal       DateTime  @default(now())
+  jumlah        Int
+  /// TUNAI | TRANSFER | SEMBAKO
+  metode        String    @default("TUNAI")
+  /// PENDING | DISETUJUI | DITOLAK
+  status        String    @default("PENDING")
+  alasanTolak   String?   @db.Text
+  tanggalCair   DateTime?
+  diajukanOleh  String
+  disetujuiOleh String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  nasabah   Nasabah @relation(fields: [nasabahId], references: [id])
+  pengaju   User    @relation("PenarikanPengaju", fields: [diajukanOleh], references: [id])
+  penyetuju User?   @relation("PenarikanPenyetuju", fields: [disetujuiOleh], references: [id])
+
+  @@index([nasabahId, tanggal])
+  @@index([status])
+}
+
+// ============================================================
+// DOMAIN: KAS
+// ============================================================
+
+/// Buku besar kas lembaga.
+model MutasiKas {
+  id           String   @id @default(cuid())
+  tanggal      DateTime @default(now())
+  /// MASUK | KELUAR
+  arah         String
+  /// PENGEPUL | PENARIKAN_NASABAH | MODAL_AWAL | OPERASIONAL | HIBAH | LAINNYA
+  kategori     String
+  jumlah       Int
+  saldoSesudah Int
+  /// PENGAMBILAN | PENARIKAN - menunjuk dokumen sumber bila ada.
+  refTipe      String?
+  refId        String?
+  keterangan   String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  @@index([tanggal])
+  @@index([kategori])
+  @@index([refTipe, refId])
+}
+
+// ============================================================
+// DOMAIN: SISTEM
+// ============================================================
+
+/// Jejak seluruh perubahan data. Wajib untuk sistem yang memegang uang.
+model AuditLog {
+  id       String   @id @default(cuid())
+  userId   String?
+  /// CREATE | UPDATE | VOID | LOGIN | APPROVE | REJECT
+  aksi     String
+  tabel    String
+  recordId String?
+  dataLama String?  @db.Text
+  dataBaru String?  @db.Text
+  ip       String?
+  waktu    DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([tabel, recordId])
+  @@index([waktu])
+}
+
+/// Penomoran dokumen anti-tabrakan.
+/// JANGAN pakai COUNT(*) + 1 - dua operator yang menyimpan bersamaan akan
+/// mendapat nomor kembar. Nomor diambil di dalam transaksi yang sama.
+model Sequence {
+  /// SETORAN | PENARIKAN | PENGAMBILAN | NASABAH
+  tipe          String
+  /// YYYYMM, atau "-" untuk sequence yang tidak direset per periode.
+  periode       String
+  nomorTerakhir Int    @default(0)
+
+  @@id([tipe, periode])
+}
