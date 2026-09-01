@@ -34,6 +34,23 @@ export type Sesi = {
 const NAMA_COOKIE = "bsa_sesi";
 const MAX_AGE_JAM = Number(process.env.SESSION_MAX_AGE_HOURS ?? 12);
 
+/**
+ * Tanda `Secure` pada cookie sesi.
+ *
+ * JANGAN diikatkan ke NODE_ENV. Sistem ini dijalankan di komputer balai
+ * desa lewat HTTP biasa dan diakses pengurus dari telepon dengan alamat IP
+ * lokal (mis. http://192.168.1.5:3000). Peramban MENOLAK menyimpan cookie
+ * bertanda Secure pada origin HTTP non-localhost, sehingga login akan
+ * gagal diam-diam - halamannya terbuka, tetapi sesi tidak pernah tersimpan.
+ * Dari localhost gejalanya tidak terlihat, karena localhost dianggap
+ * konteks aman; jadi kekeliruan ini mudah lolos saat diuji di satu mesin.
+ *
+ * Default: aktif hanya bila memang dilayani lewat HTTPS (Vercel), atau
+ * bila dinyalakan sendiri lewat SESSION_COOKIE_SECURE=true.
+ */
+const COOKIE_SECURE =
+  process.env.SESSION_COOKIE_SECURE === "true" || Boolean(process.env.VERCEL);
+
 function kunci(): Uint8Array {
   const secret = process.env.SESSION_SECRET;
   if (!secret || secret.length < 32) {
@@ -67,7 +84,7 @@ export async function buatSesi(sesi: Sesi): Promise<void> {
   store.set(NAMA_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: COOKIE_SECURE,
     path: "/",
     maxAge: MAX_AGE_JAM * 3600,
   });
