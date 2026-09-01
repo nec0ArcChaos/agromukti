@@ -32,6 +32,14 @@ const KELOMPOK_TAUT = [
       { href: "/panen", label: "Panen" },
     ],
   },
+  {
+    label: "Pupuk",
+    taut: [
+      { href: "/pupuk", label: "Stok Pupuk" },
+      { href: "/permintaan", label: "Permintaan" },
+      { href: "/distribusi", label: "Distribusi" },
+    ],
+  },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
