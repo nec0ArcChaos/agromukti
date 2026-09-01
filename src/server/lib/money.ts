@@ -7,6 +7,23 @@ export function toDecimal(nilai: Berat): Prisma.Decimal {
   return nilai instanceof Prisma.Decimal ? nilai : new Prisma.Decimal(nilai);
 }
 
+/**
+ * Subtotal satu baris: jumlah x harga satuan, dibulatkan ke rupiah utuh.
+ *
+ * Nominal uang di sistem ini SELALU integer rupiah - tidak ada sen dalam
+ * praktik desa. Perkalian jumlah (2 desimal) dengan harga satuan karena itu
+ * wajib dibulatkan, dan pembulatannya dilakukan di satu tempat ini saja
+ * supaya total dokumen tidak pernah berselisih dengan jumlah barisnya.
+ *
+ * Pembulatan setengah ke atas: 2,35 kg x Rp 1.500 = Rp 3.525.
+ */
+export function hitungSubtotal(jumlah: Berat, hargaSatuan: number): number {
+  return toDecimal(jumlah)
+    .mul(hargaSatuan)
+    .toDecimalPlaces(0, Prisma.Decimal.ROUND_HALF_UP)
+    .toNumber();
+}
+
 /** Jumlahkan berat sederet baris tanpa kehilangan presisi. */
 export function totalBerat(list: Berat[]): Prisma.Decimal {
   return list.reduce<Prisma.Decimal>(

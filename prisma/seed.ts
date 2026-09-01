@@ -100,6 +100,37 @@ async function main() {
       },
     });
     const komoditas = await prisma.komoditas.findUniqueOrThrow({ where: { kode: "KM-03" } });
+    const operator = await prisma.user.findUniqueOrThrow({ where: { username: "admin" } });
+
+    // Petani hanya boleh warga yang sudah jadi nasabah AKTIF dan pernah
+    // menyetor sampah. Seed harus membuat rantai lengkapnya, kalau tidak
+    // instalasi bersih menghasilkan data yang melanggar aturannya sendiri.
+    const nasabah = await prisma.nasabah.create({
+      data: { kode: "AGM-0001", wargaId: warga.id },
+    });
+    await prisma.sequence.upsert({
+      where: { tipe_periode: { tipe: "NASABAH", periode: "-" } },
+      create: { tipe: "NASABAH", periode: "-", nomorTerakhir: 1 },
+      update: { nomorTerakhir: 1 },
+    });
+
+    const bulan = new Date();
+    const periode = `${bulan.getFullYear()}${String(bulan.getMonth() + 1).padStart(2, "0")}`;
+    await prisma.setoran.create({
+      data: {
+        nomor: `ST-${periode}-0001`,
+        nasabahId: nasabah.id,
+        beratKg: 5,
+        operatorId: operator.id,
+        catatan: "Setoran contoh dari seed.",
+      },
+    });
+    await prisma.sequence.upsert({
+      where: { tipe_periode: { tipe: "SETORAN", periode } },
+      create: { tipe: "SETORAN", periode, nomorTerakhir: 1 },
+      update: { nomorTerakhir: 1 },
+    });
+
     const petani = await prisma.petani.create({
       data: { wargaId: warga.id, kode: "TN-0001", kelompokTani: "Tani Makmur Apuy" },
     });
@@ -120,7 +151,7 @@ async function main() {
         lokasi: "Blok Apuy Atas - dekat Curug Muara Jaya",
       },
     });
-    console.log("  Contoh warga lintas pilar siap (petani + lahan)");
+    console.log("  Contoh warga lintas pilar siap (nasabah + setoran + petani + lahan)");
   }
 }
 

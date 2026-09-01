@@ -4,6 +4,7 @@ import { prisma } from "@/server/lib/db";
 import { AppError, ConflictError, NotFoundError } from "@/server/lib/errors";
 import { catatAudit } from "@/server/lib/audit";
 import { ambilNomor } from "@/server/lib/sequence";
+import { hitungSubtotal } from "@/server/lib/money";
 
 export const STATUS_PERMINTAAN = ["DIAJUKAN", "DIPROSES", "DISETUJUI", "DITOLAK", "SELESAI"] as const;
 
@@ -35,9 +36,24 @@ export const skemaFilterPermintaan = z.object({
 
 const SERTAKAN = {
   petani: {
-    select: { id: true, kode: true, kelompokTani: true, warga: { select: { nama: true, dusun: true } } },
+    select: {
+      id: true,
+      kode: true,
+      kelompokTani: true,
+      warga: {
+        select: {
+          nama: true,
+          dusun: true,
+          // Saldo ditampilkan ke PETUGAS (bukan portal publik) supaya
+          // terlihat apakah warga mampu membayar pupuknya dari tabungan.
+          nasabah: { select: { kode: true, saldo: true, status: true } },
+        },
+      },
+    },
   },
-  detail: { include: { produkPupuk: { select: { id: true, kode: true, nama: true, satuan: true, stok: true } } } },
+  detail: {
+    include: { produkPupuk: { select: { id: true, kode: true, nama: true, satuan: true, stok: true, harga: true } } },
+  },
   distribusi: {
     select: { id: true, nomor: true, status: true, tanggalDistribusi: true, detail: true },
   },
@@ -89,6 +105,15 @@ export async function buatPermintaan(input: z.infer<typeof skemaBuatPermintaan>,
   const idProduk = [...new Set(input.item.map((i) => i.produkPupukId))];
   const produkList = await prisma.produkPupuk.findMany({ where: { id: { in: idProduk } } });
   if (produkList.length !== idProduk.length) throw new NotFoundError("Produk pupuk");
+  const petaProduk = new Map(produkList.map((p) => [p.id, p]));
+
+  // Perkiraan biaya disimpan agar petani tahu ancar-ancarnya sejak
+  // mengajukan. Ini BUKAN harga yang mengikat - yang mengikat adalah
+  // snapshot saat penyaluran, karena harga bisa berubah di antaranya.
+  const baris = input.item.map((i) => {
+    const p = petaProduk.get(i.produkPupukId)!;
+    return { ...i, hargaSatuan: p.harga, subtotal: hitungSubtotal(i.jumlah, p.harga) };
+  });
 
   const tanggal = input.tanggal ?? new Date();
 
@@ -100,7 +125,7 @@ export async function buatPermintaan(input: z.infer<typeof skemaBuatPermintaan>,
         petaniId: input.petaniId,
         tanggal,
         keterangan: input.keterangan,
-        detail: { create: input.item },
+        detail: { create: baris },
       },
       include: SERTAKAN,
     });

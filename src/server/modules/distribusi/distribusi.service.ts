@@ -4,12 +4,16 @@ import { prisma } from "@/server/lib/db";
 import { AppError, ConflictError, NotFoundError } from "@/server/lib/errors";
 import { catatAudit } from "@/server/lib/audit";
 import { ambilNomor } from "@/server/lib/sequence";
+import { hitungSubtotal, formatRupiah } from "@/server/lib/money";
 import { tulisMutasiStok } from "@/server/modules/pupuk/pupuk.service";
 import { sisaBolehSalur } from "@/server/modules/permintaan/permintaan.service";
+
+export const METODE_BAYAR = ["SALDO", "TUNAI", "SUBSIDI"] as const;
 
 export const skemaBuatDistribusi = z.object({
   permintaanId: z.string().min(1, "Pilih permintaan yang akan disalurkan."),
   tanggalDistribusi: z.coerce.date().optional(),
+  metodeBayar: z.enum(METODE_BAYAR).default("SALDO"),
   keterangan: z.string().trim().optional(),
   item: z
     .array(
@@ -79,7 +83,19 @@ export async function ambilDistribusi(id: string) {
 export async function buatDistribusi(input: z.infer<typeof skemaBuatDistribusi>, userId: string) {
   const permintaan = await prisma.permintaanPupuk.findUnique({
     where: { id: input.permintaanId },
-    include: { petani: { select: { kode: true, warga: { select: { nama: true } } } } },
+    include: {
+      petani: {
+        select: {
+          kode: true,
+          warga: {
+            select: {
+              nama: true,
+              nasabah: { select: { id: true, kode: true, saldo: true, status: true } },
+            },
+          },
+        },
+      },
+    },
   });
   if (!permintaan) throw new NotFoundError("Permintaan pupuk");
   if (permintaan.status !== "DISETUJUI") {
@@ -114,6 +130,54 @@ export async function buatDistribusi(input: z.infer<typeof skemaBuatDistribusi>,
     }
   }
 
+  // Harga di-snapshot sekarang, sama seperti harga setoran: perubahan
+  // harga pupuk bulan depan tidak boleh mengubah nilai penyaluran yang
+  // sudah memotong saldo warga.
+  const produkList = await prisma.produkPupuk.findMany({
+    where: { id: { in: input.item.map((i) => i.produkPupukId) } },
+  });
+  const petaProduk = new Map(produkList.map((p) => [p.id, p]));
+
+  const baris = input.item.map((item) => {
+    const produk = petaProduk.get(item.produkPupukId);
+    if (!produk) throw new NotFoundError("Produk pupuk");
+    return {
+      ...item,
+      hargaSatuan: produk.harga,
+      subtotal: hitungSubtotal(item.jumlah, produk.harga),
+    };
+  });
+  const totalNilai = baris.reduce((a, b) => a + b.subtotal, 0);
+
+  const nasabah = permintaan.petani.warga.nasabah.find((n) => n.status === "AKTIF") ?? null;
+
+  // Pembayaran dari saldo hanya mungkin bila petaninya memang punya
+  // rekening aktif dan saldonya cukup. Pesannya menyebut angka dan kedua
+  // jalan keluarnya, karena operator perlu bisa menjelaskan ke warga di
+  // depan meja - bukan sekadar tahu bahwa sistem menolak.
+  if (input.metodeBayar === "SALDO") {
+    if (!nasabah) {
+      throw new AppError(
+        "TIDAK_PUNYA_REKENING",
+        `${permintaan.petani.warga.nama} tidak punya rekening bank sampah yang aktif, ` +
+          `sehingga tidak bisa membayar dari tabungan. Pilih pembayaran tunai, atau daftarkan rekeningnya dulu.`,
+        409,
+      );
+    }
+    if (nasabah.saldo < totalNilai) {
+      const kurang = totalNilai - nasabah.saldo;
+      throw new AppError(
+        "SALDO_TIDAK_CUKUP",
+        `Saldo ${permintaan.petani.warga.nama} ${formatRupiah(nasabah.saldo)}, ` +
+          `sedangkan pupuk ini bernilai ${formatRupiah(totalNilai)} - kurang ${formatRupiah(kurang)}. ` +
+          `Pilihannya: warga menyetor sampah lagi ke bank sampah untuk menambah saldo, ` +
+          `atau membayar tunai ke petugas.`,
+        409,
+        { metodeBayar: `Kurang ${formatRupiah(kurang)}` },
+      );
+    }
+  }
+
   const tanggal = input.tanggalDistribusi ?? new Date();
 
   const hasil = await prisma.$transaction(async (tx) => {
@@ -124,13 +188,16 @@ export async function buatDistribusi(input: z.infer<typeof skemaBuatDistribusi>,
         nomor,
         permintaanId: input.permintaanId,
         tanggalDistribusi: tanggal,
+        totalNilai,
+        metodeBayar: input.metodeBayar,
+        nasabahId: input.metodeBayar === "SALDO" ? nasabah!.id : null,
         keterangan: input.keterangan,
         operatorId: userId,
-        detail: { create: input.item },
+        detail: { create: baris },
       },
     });
 
-    for (const item of input.item) {
+    for (const item of baris) {
       await tulisMutasiStok(tx, {
         produkPupukId: item.produkPupukId,
         arah: "KELUAR",
@@ -143,13 +210,56 @@ export async function buatDistribusi(input: z.infer<typeof skemaBuatDistribusi>,
       });
     }
 
+    if (input.metodeBayar === "SALDO" && totalNilai > 0) {
+      // Memotong tabungan: kewajiban bank sampah kepada warga berkurang.
+      // TIDAK menambah kas - tidak ada uang tunai yang bergerak, dan
+      // mencatatnya sebagai kas masuk akan menggandakan pencatatan.
+      const saldoSesudah = nasabah!.saldo - totalNilai;
+      await tx.mutasiTabungan.create({
+        data: {
+          nasabahId: nasabah!.id,
+          tanggal,
+          jenis: "PEMBELIAN_PUPUK",
+          debit: totalNilai,
+          saldoSesudah,
+          refTipe: "DISTRIBUSI",
+          refId: distribusi.id,
+          keterangan: `Pembelian pupuk ${nomor} (${permintaan.nomor})`,
+        },
+      });
+      await tx.nasabah.update({ where: { id: nasabah!.id }, data: { saldo: saldoSesudah } });
+    }
+
+    if (input.metodeBayar === "TUNAI" && totalNilai > 0) {
+      // Uang tunai benar-benar masuk ke kas lembaga.
+      const kasTerakhir = await tx.mutasiKas.findFirst({ orderBy: { createdAt: "desc" } });
+      await tx.mutasiKas.create({
+        data: {
+          tanggal,
+          arah: "MASUK",
+          kategori: "PENJUALAN_PUPUK",
+          jumlah: totalNilai,
+          saldoSesudah: (kasTerakhir?.saldoSesudah ?? 0) + totalNilai,
+          refTipe: "DISTRIBUSI",
+          refId: distribusi.id,
+          keterangan: `Pembayaran tunai pupuk ${nomor} oleh ${permintaan.petani.warga.nama}`,
+        },
+      });
+    }
+
     await catatAudit(
       {
         userId,
         aksi: "CREATE",
         tabel: "DistribusiPupuk",
         recordId: distribusi.id,
-        dataBaru: { nomor, permintaan: permintaan.nomor, jumlahItem: input.item.length },
+        dataBaru: {
+          nomor,
+          permintaan: permintaan.nomor,
+          totalNilai,
+          metodeBayar: input.metodeBayar,
+          jumlahItem: baris.length,
+        },
       },
       tx,
     );
@@ -204,6 +314,22 @@ export async function batalDistribusi(id: string, alasan: string, userId: string
     throw new ConflictError("SUDAH_DIBATALKAN", `Distribusi ${d.nomor} sudah dibatalkan sebelumnya.`);
   }
 
+  // Pembayarannya juga harus dikembalikan, bukan hanya stoknya. Kalau
+  // hanya stok yang balik, warga tetap kehilangan saldo untuk pupuk yang
+  // tidak pernah ia terima.
+  if (d.metodeBayar === "TUNAI" && d.totalNilai > 0) {
+    const kasTerakhir = await prisma.mutasiKas.findFirst({ orderBy: { createdAt: "desc" } });
+    const saldoKas = kasTerakhir?.saldoSesudah ?? 0;
+    if (saldoKas < d.totalNilai) {
+      throw new AppError(
+        "KAS_TIDAK_CUKUP_UNTUK_BATAL",
+        `Kas saat ini ${formatRupiah(saldoKas)}, kurang dari ${formatRupiah(d.totalNilai)} ` +
+          `yang harus dikembalikan atas pembatalan ini.`,
+        409,
+      );
+    }
+  }
+
   await prisma.$transaction(async (tx) => {
     for (const item of d.detail) {
       await tulisMutasiStok(tx, {
@@ -214,6 +340,38 @@ export async function batalDistribusi(id: string, alasan: string, userId: string
         refId: d.id,
         sumber: `Pembatalan ${d.nomor}`,
         keterangan: alasan,
+      });
+    }
+
+    if (d.metodeBayar === "SALDO" && d.nasabahId && d.totalNilai > 0) {
+      const n = await tx.nasabah.findUniqueOrThrow({ where: { id: d.nasabahId } });
+      const saldoSesudah = n.saldo + d.totalNilai;
+      await tx.mutasiTabungan.create({
+        data: {
+          nasabahId: d.nasabahId,
+          jenis: "PEMBATALAN",
+          kredit: d.totalNilai,
+          saldoSesudah,
+          refTipe: "DISTRIBUSI",
+          refId: d.id,
+          keterangan: `Pengembalian pembelian pupuk ${d.nomor}: ${alasan}`,
+        },
+      });
+      await tx.nasabah.update({ where: { id: d.nasabahId }, data: { saldo: saldoSesudah } });
+    }
+
+    if (d.metodeBayar === "TUNAI" && d.totalNilai > 0) {
+      const kasTerakhir = await tx.mutasiKas.findFirst({ orderBy: { createdAt: "desc" } });
+      await tx.mutasiKas.create({
+        data: {
+          arah: "KELUAR",
+          kategori: "KOREKSI",
+          jumlah: d.totalNilai,
+          saldoSesudah: (kasTerakhir?.saldoSesudah ?? 0) - d.totalNilai,
+          refTipe: "DISTRIBUSI",
+          refId: d.id,
+          keterangan: `Pengembalian tunai atas pembatalan ${d.nomor}: ${alasan}`,
+        },
       });
     }
 

@@ -70,10 +70,11 @@ model Nasabah {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  warga     Warga            @relation(fields: [wargaId], references: [id])
-  setoran   Setoran[]
-  mutasi    MutasiTabungan[]
-  penarikan Penarikan[]
+  warga      Warga             @relation(fields: [wargaId], references: [id])
+  setoran    Setoran[]
+  mutasi     MutasiTabungan[]
+  penarikan  Penarikan[]
+  distribusi DistribusiPupuk[]
 
   @@index([wargaId])
   @@index([status])
@@ -125,6 +126,16 @@ model Pengaturan {
   minimalPenarikan Int      @default(10000)
   /// Saldo minimal yang harus tersisa di rekening nasabah.
   saldoMinimum     Int      @default(0)
+
+  /// --- Rasio estimasi hasil produksi pupuk ---
+  /// Dipakai menghitung perkiraan hasil dari berat bahan baku, supaya
+  /// operator tidak perlu menebak sendiri. Disimpan sebagai pengaturan
+  /// (bukan angka mati di kode) karena rendemen nyata bergeser mengikuti
+  /// metode, musim, dan komposisi sampah - desa harus bisa menyetelnya
+  /// dari hasil yang benar-benar mereka capai.
+  rendemenKomposPersen Decimal @default(30) @db.Decimal(5, 2)
+  hasilPocLiterPerKg   Decimal @default(0.05) @db.Decimal(6, 4)
+
   updatedAt        DateTime @updatedAt
 }
 
@@ -513,6 +524,10 @@ model PermintaanPupukDetail {
   produkPupukId String
   jumlah        Decimal @db.Decimal(12, 2)
   satuan        String  @default("KG")
+  /// Perkiraan biaya saat pengajuan dibuat - sekadar ancar-ancar bagi
+  /// petani. Harga yang MENGIKAT adalah yang disnapshot saat penyaluran.
+  hargaSatuan   Int?
+  subtotal      Int?
 
   permintaan  PermintaanPupuk @relation(fields: [permintaanId], references: [id], onDelete: Cascade)
   produkPupuk ProdukPupuk     @relation(fields: [produkPupukId], references: [id])
@@ -529,12 +544,25 @@ model DistribusiPupuk {
   tanggalDistribusi DateTime @default(now())
   /// DIPROSES | DIKIRIM | DITERIMA | DIBATALKAN
   status            String   @default("DIPROSES")
+  /// Total harga seluruh baris, rupiah. Disimpan agar nilai penyaluran
+  /// tetap utuh meski harga produk berubah kemudian.
+  totalNilai        Int      @default(0)
+  /// SALDO   - dipotong dari tabungan bank sampah petani. TIDAK menambah
+  ///           kas: tidak ada uang tunai yang bergerak, yang berkurang
+  ///           adalah kewajiban bank sampah kepada warga.
+  /// TUNAI   - dibayar langsung ke petugas. Menambah kas.
+  /// SUBSIDI - jatah gratis/bantuan desa. Nilainya tetap dicatat untuk
+  ///           laporan, tetapi tidak menagih siapa pun.
+  metodeBayar       String   @default("SUBSIDI")
+  /// Rekening yang dipotong bila metodeBayar = SALDO.
+  nasabahId         String?
   keterangan        String?  @db.Text
   operatorId        String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   permintaan PermintaanPupuk         @relation(fields: [permintaanId], references: [id])
+  nasabah    Nasabah?                @relation(fields: [nasabahId], references: [id])
   detail     DistribusiPupukDetail[]
 
   @@index([permintaanId])
@@ -548,6 +576,11 @@ model DistribusiPupukDetail {
   produkPupukId String
   jumlah        Decimal @db.Decimal(12, 2)
   satuan        String  @default("KG")
+  /// SNAPSHOT harga saat penyaluran. Alasannya sama dengan harga setoran:
+  /// perubahan harga pupuk bulan depan tidak boleh mengubah nilai
+  /// penyaluran yang sudah terjadi dan sudah memotong saldo warga.
+  hargaSatuan   Int     @default(0)
+  subtotal      Int     @default(0)
 
   distribusi  DistribusiPupuk @relation(fields: [distribusiId], references: [id], onDelete: Cascade)
   produkPupuk ProdukPupuk     @relation(fields: [produkPupukId], references: [id])

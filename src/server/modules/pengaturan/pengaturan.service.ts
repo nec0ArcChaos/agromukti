@@ -18,6 +18,10 @@ export async function perbaruiPengaturan(
     ketuaBankSampah: string;
     minimalPenarikan: number;
     saldoMinimum: number;
+    /// Rasio estimasi hasil produksi pupuk. Disetel dari capaian nyata -
+    /// lihat rasioAktual() di modul produksi sebagai pembanding.
+    rendemenKomposPersen: number;
+    hasilPocLiterPerKg: number;
   }>,
   userId: string,
 ) {

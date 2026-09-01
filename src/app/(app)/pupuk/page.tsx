@@ -99,7 +99,7 @@ export default function HalamanPupuk() {
 }
 
 function FormProduk({ onSelesai }: { onSelesai: () => void }) {
-  const [kode, setKode] = useState(""); const [nama, setNama] = useState("");
+  const [nama, setNama] = useState("");
   const [jenis, setJenis] = useState("KOMPOS_PADAT"); const [harga, setHarga] = useState("0");
   const [satuan, setSatuan] = useState("KG");
   const [galat, setGalat] = useState<string | null>(null); const [menyimpan, setMenyimpan] = useState(false);
@@ -107,7 +107,7 @@ function FormProduk({ onSelesai }: { onSelesai: () => void }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setGalat(null); setMenyimpan(true);
     try {
-      await api.post("/api/produk-pupuk", { kode, nama, jenis, harga: Number(harga), satuan });
+      await api.post("/api/produk-pupuk", { nama, jenis, harga: Number(harga), satuan });
       onSelesai();
     } catch (err) { setGalat(err instanceof ApiError ? err.message : "Gagal menyimpan."); }
     finally { setMenyimpan(false); }
@@ -115,8 +115,11 @@ function FormProduk({ onSelesai }: { onSelesai: () => void }) {
 
   return (
     <form onSubmit={submit} className="card grid grid-cols-1 gap-3 sm:grid-cols-5">
-      <div><label className="label">Kode</label><input className="field" value={kode} onChange={(e) => setKode(e.target.value)} required /></div>
-      <div><label className="label">Nama</label><input className="field" value={nama} onChange={(e) => setNama(e.target.value)} required /></div>
+      <div className="sm:col-span-2">
+        <label className="label">Nama</label>
+        <input className="field" value={nama} onChange={(e) => setNama(e.target.value)} required />
+        <p className="mt-1 text-xs text-muted-foreground">Kode dibuat otomatis (PPK-0001).</p>
+      </div>
       <div>
         <label className="label">Jenis</label>
         <select className="field" value={jenis} onChange={(e) => { setJenis(e.target.value); setSatuan(e.target.value === "PUPUK_CAIR" ? "LITER" : "KG"); }}>

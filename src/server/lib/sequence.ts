@@ -8,7 +8,8 @@ export type TipeSequence =
   | "PETANI"
   | "PERMINTAAN"
   | "DISTRIBUSI"
-  | "PRODUKSI";
+  | "PRODUKSI"
+  | "PRODUK_PUPUK";
 
 const AWALAN: Record<TipeSequence, string> = {
   SETORAN: "ST",
@@ -19,10 +20,13 @@ const AWALAN: Record<TipeSequence, string> = {
   PERMINTAAN: "PMT",
   DISTRIBUSI: "DST",
   PRODUKSI: "PRD",
+  // Bukan "PP": awalan itu sudah dipakai Pengambilan Pengepul, dan nomor
+  // yang mirip di dua dokumen berbeda mudah tertukar saat membaca laporan.
+  PRODUK_PUPUK: "PPK",
 };
 
 /** Nomor identitas orang berjalan terus, tidak direset tiap bulan. */
-const TANPA_PERIODE: TipeSequence[] = ["NASABAH", "PETANI"];
+const TANPA_PERIODE: TipeSequence[] = ["NASABAH", "PETANI", "PRODUK_PUPUK"];
 
 function periodeDari(tanggal: Date): string {
   const th = tanggal.getFullYear();

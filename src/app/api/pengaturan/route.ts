@@ -11,6 +11,10 @@ const skemaUbah = z.object({
   ketuaBankSampah: z.string().trim().optional(),
   minimalPenarikan: z.coerce.number().int().min(0).optional(),
   saldoMinimum: z.coerce.number().int().min(0).optional(),
+  // Rendemen dibatasi 0-100%: nilai di luar itu pasti salah ketik, dan
+  // kalau lolos akan menghasilkan estimasi yang menyesatkan operator.
+  rendemenKomposPersen: z.coerce.number().min(0).max(100).optional(),
+  hasilPocLiterPerKg: z.coerce.number().min(0).max(10).optional(),
 });
 
 export const GET = route(async () => {

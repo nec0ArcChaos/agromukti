@@ -11,8 +11,6 @@ export const skemaBuatProduksi = z.object({
   tanggalMulai: z.coerce.date().optional(),
   estimasiSelesai: z.coerce.date().optional(),
   beratSampahOrganik: z.coerce.number().positive("Berat bahan baku harus lebih dari 0."),
-  estimasiPupukCair: z.coerce.number().min(0).default(0),
-  estimasiPupukKasar: z.coerce.number().min(0).default(0),
   /// Produk tujuan hasil panen nanti.
   produkPadatId: z.string().min(1).optional(),
   produkCairId: z.string().min(1).optional(),
@@ -51,6 +49,56 @@ function hitungHasil(beratBahan: Prisma.Decimal, padat: Prisma.Decimal | null, c
   return {
     rendemenPadatPersen: padat ? padat.div(beratBahan).mul(100).toDecimalPlaces(2) : null,
     hasilCairPerKg: cair ? cair.div(beratBahan).toDecimalPlaces(4) : null,
+  };
+}
+
+/**
+ * Perkiraan hasil dari berat bahan baku, memakai rasio di Pengaturan.
+ *
+ * Operator cukup memasukkan berat bahan; estimasi tidak lagi ditebak
+ * sendiri. Rasionya disimpan sebagai pengaturan, bukan angka mati, karena
+ * rendemen nyata bergeser mengikuti metode, musim, dan komposisi sampah -
+ * dan `rasioAktual()` di bawah memperlihatkan apakah setelannya masih
+ * mendekati kenyataan.
+ */
+export async function hitungEstimasi(beratBahan: Prisma.Decimal | number) {
+  const p = await prisma.pengaturan.findUnique({ where: { id: "SINGLETON" } });
+  const berat = new Prisma.Decimal(beratBahan);
+
+  const rendemenPersen = p?.rendemenKomposPersen ?? new Prisma.Decimal(30);
+  const pocPerKg = p?.hasilPocLiterPerKg ?? new Prisma.Decimal(0.05);
+
+  return {
+    estimasiPupukKasar: berat.mul(rendemenPersen).div(100).toDecimalPlaces(2),
+    estimasiPupukCair: berat.mul(pocPerKg).toDecimalPlaces(2),
+    rendemenPersen,
+    pocPerKg,
+  };
+}
+
+/**
+ * Rasio yang BENAR-BENAR tercapai dari seluruh batch yang selesai.
+ *
+ * Ditampilkan berdampingan dengan setelan estimasi supaya operator bisa
+ * melihat sendiri apakah angka anjurannya masih masuk akal - tanpa ini,
+ * setelan yang meleset jauh bisa dipakai berbulan-bulan tanpa disadari.
+ * Mengembalikan null bila belum ada batch selesai; menebak dari nol lebih
+ * menyesatkan daripada mengaku belum punya data.
+ */
+export async function rasioAktual() {
+  const selesai = await prisma.produksiPupuk.findMany({ where: { status: "SELESAI" } });
+  if (selesai.length === 0) return null;
+
+  const bahan = selesai.reduce((a, p) => a.add(p.beratSampahOrganik), new Prisma.Decimal(0));
+  if (bahan.lessThanOrEqualTo(0)) return null;
+
+  const padat = selesai.reduce((a, p) => a.add(p.pupukKasarAktual ?? 0), new Prisma.Decimal(0));
+  const cair = selesai.reduce((a, p) => a.add(p.pupukCairAktual ?? 0), new Prisma.Decimal(0));
+
+  return {
+    jumlahBatch: selesai.length,
+    rendemenPersen: padat.div(bahan).mul(100).toDecimalPlaces(2),
+    pocPerKg: cair.div(bahan).toDecimalPlaces(4),
   };
 }
 
@@ -93,6 +141,9 @@ export async function buatProduksi(input: z.infer<typeof skemaBuatProduksi>, ope
   }
 
   const tanggal = input.tanggalMulai ?? new Date();
+  // Estimasi dihitung sistem dari berat bahan baku - operator tidak lagi
+  // memasukkannya sendiri.
+  const estimasi = await hitungEstimasi(input.beratSampahOrganik);
 
   const produksi = await prisma.$transaction(async (tx) => {
     const kode = await ambilNomor(tx, "PRODUKSI", tanggal);
@@ -103,8 +154,8 @@ export async function buatProduksi(input: z.infer<typeof skemaBuatProduksi>, ope
         tanggalMulai: tanggal,
         estimasiSelesai: input.estimasiSelesai,
         beratSampahOrganik: input.beratSampahOrganik,
-        estimasiPupukCair: input.estimasiPupukCair,
-        estimasiPupukKasar: input.estimasiPupukKasar,
+        estimasiPupukCair: estimasi.estimasiPupukCair,
+        estimasiPupukKasar: estimasi.estimasiPupukKasar,
         produkPadatId: input.produkPadatId,
         produkCairId: input.produkCairId,
         keterangan: input.keterangan,

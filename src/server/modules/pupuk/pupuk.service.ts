@@ -3,11 +3,11 @@ import { z } from "zod";
 import { prisma } from "@/server/lib/db";
 import { AppError, NotFoundError } from "@/server/lib/errors";
 import { catatAudit } from "@/server/lib/audit";
+import { ambilNomor } from "@/server/lib/sequence";
 
 export const JENIS_PUPUK = ["KOMPOS_PADAT", "PUPUK_CAIR"] as const;
 
 export const skemaBuatProdukPupuk = z.object({
-  kode: z.string().trim().min(1, "Kode wajib diisi."),
   nama: z.string().trim().min(1, "Nama wajib diisi."),
   jenis: z.enum(JENIS_PUPUK).default("KOMPOS_PADAT"),
   deskripsi: z.string().trim().optional(),
@@ -16,7 +16,6 @@ export const skemaBuatProdukPupuk = z.object({
 });
 
 export const skemaUbahProdukPupuk = skemaBuatProdukPupuk
-  .omit({ kode: true })
   .partial()
   .extend({ aktif: z.boolean().optional() });
 
@@ -42,12 +41,17 @@ export async function ambilProdukPupuk(id: string) {
   return p;
 }
 
+/**
+ * Menambah produk pupuk. Kodenya dibangkitkan sistem (PPK-0001), tidak
+ * lagi diketik operator - kode buatan tangan mudah kembar atau tidak
+ * seragam, dan operator tidak punya alasan untuk memikirkannya.
+ */
 export async function buatProdukPupuk(input: z.infer<typeof skemaBuatProdukPupuk>, userId: string) {
-  const ada = await prisma.produkPupuk.findUnique({ where: { kode: input.kode } });
-  if (ada) {
-    throw new AppError("KODE_DIPAKAI", `Kode "${input.kode}" sudah digunakan.`, 409, { kode: "Sudah digunakan" });
-  }
-  const produk = await prisma.produkPupuk.create({ data: input });
+  const produk = await prisma.$transaction(async (tx) => {
+    const kode = await ambilNomor(tx, "PRODUK_PUPUK");
+    return tx.produkPupuk.create({ data: { ...input, kode } });
+  });
+
   await catatAudit({ userId, aksi: "CREATE", tabel: "ProdukPupuk", recordId: produk.id, dataBaru: produk });
   return produk;
 }

@@ -15,6 +15,11 @@ type Produksi = {
   produkPadat: { nama: string; satuan: string } | null;
   produkCair: { nama: string; satuan: string } | null;
 };
+type Estimasi = {
+  estimasiPupukKasar: string; estimasiPupukCair: string;
+  rendemenPersen: string; pocPerKg: string;
+  aktual: { jumlahBatch: number; rendemenPersen: string; pocPerKg: string } | null;
+};
 type Ringkasan = {
   perStatus: { status: string; jumlah: number }[];
   totalBahanKg: string; totalPadatKg: string; totalCairLiter: string;
@@ -133,21 +138,31 @@ function FormProduksi({
   produkList, stokOrganik, onSelesai,
 }: { produkList: Produk[]; stokOrganik: string; onSelesai: () => void }) {
   const [berat, setBerat] = useState("");
-  const [estKasar, setEstKasar] = useState(""); const [estCair, setEstCair] = useState("");
   const [produkPadatId, setPadat] = useState(""); const [produkCairId, setCair] = useState("");
   const [keterangan, setKeterangan] = useState("");
+  const [estimasi, setEstimasi] = useState<Estimasi | null>(null);
   const [galat, setGalat] = useState<string | null>(null); const [menyimpan, setMenyimpan] = useState(false);
 
   const padatList = produkList.filter((p) => p.jenis === "KOMPOS_PADAT");
   const cairList = produkList.filter((p) => p.jenis === "PUPUK_CAIR");
+
+  const muatEstimasi = useCallback(async () => {
+    if (!berat || Number(berat) <= 0) { setEstimasi(null); return; }
+    try {
+      setEstimasi(await api.get<Estimasi>(`/api/produksi/estimasi?berat=${Number(berat)}`));
+    } catch {
+      setEstimasi(null);
+    }
+  }, [berat]);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- estimasi dimuat ulang setiap berat bahan baku berubah.
+  useEffect(() => { muatEstimasi(); }, [muatEstimasi]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setGalat(null); setMenyimpan(true);
     try {
       await api.post("/api/produksi", {
         beratSampahOrganik: Number(berat),
-        estimasiPupukKasar: Number(estKasar || 0),
-        estimasiPupukCair: Number(estCair || 0),
         produkPadatId: produkPadatId || undefined,
         produkCairId: produkCairId || undefined,
         keterangan: keterangan || undefined,
@@ -163,11 +178,52 @@ function FormProduksi({
         Stok bahan baku tersedia: <span className="font-medium">{Number(stokOrganik).toLocaleString("id-ID")} kg</span>
       </p>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div><label className="label">Bahan baku (kg)</label><input type="number" step="0.01" min="0.01" max={Number(stokOrganik)} className="field" value={berat} onChange={(e) => setBerat(e.target.value)} required /></div>
-        <div><label className="label">Estimasi kompos padat (kg)</label><input type="number" step="0.01" min="0" className="field" value={estKasar} onChange={(e) => setEstKasar(e.target.value)} /></div>
-        <div><label className="label">Estimasi pupuk cair (liter)</label><input type="number" step="0.01" min="0" className="field" value={estCair} onChange={(e) => setEstCair(e.target.value)} /></div>
+      <div className="max-w-xs">
+        <label className="label">Bahan baku (kg)</label>
+        <input type="number" step="0.01" min="0.01" max={Number(stokOrganik)} className="field" value={berat} onChange={(e) => setBerat(e.target.value)} required />
+        <p className="mt-1 text-xs text-muted-foreground">Estimasi hasil dihitung otomatis dari berat ini.</p>
       </div>
+
+      {estimasi && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Perkiraan hasil</p>
+          <div className="mt-2 flex flex-wrap gap-x-8 gap-y-2">
+            <div>
+              <p className="text-xl font-bold text-primary">
+                {Number(estimasi.estimasiPupukKasar).toLocaleString("id-ID", { maximumFractionDigits: 2 })} kg
+              </p>
+              <p className="text-xs text-muted-foreground">
+                kompos padat · rendemen {Number(estimasi.rendemenPersen).toLocaleString("id-ID")}%
+              </p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-primary">
+                {Number(estimasi.estimasiPupukCair).toLocaleString("id-ID", { maximumFractionDigits: 2 })} liter
+              </p>
+              <p className="text-xs text-muted-foreground">
+                pupuk cair · {Number(estimasi.pocPerKg).toLocaleString("id-ID", { maximumFractionDigits: 4 })} L/kg
+              </p>
+            </div>
+          </div>
+          {estimasi.aktual ? (
+            <p className="mt-3 border-t border-primary/20 pt-2 text-xs text-muted-foreground">
+              Capaian nyata dari {estimasi.aktual.jumlahBatch} batch selesai:{" "}
+              <span className="font-medium text-foreground">
+                {Number(estimasi.aktual.rendemenPersen).toFixed(1)}% padat
+              </span>{" "}
+              ·{" "}
+              <span className="font-medium text-foreground">
+                {Number(estimasi.aktual.pocPerKg).toFixed(3)} L/kg cair
+              </span>
+              . Bila jauh berbeda dari anjuran, setel ulang rasionya di menu Pengaturan.
+            </p>
+          ) : (
+            <p className="mt-3 border-t border-primary/20 pt-2 text-xs text-muted-foreground">
+              Belum ada batch selesai sebagai pembanding — angka di atas masih memakai rasio anjuran.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>

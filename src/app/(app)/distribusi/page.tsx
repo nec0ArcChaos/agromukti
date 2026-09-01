@@ -5,14 +5,23 @@ import { api, ApiError } from "@/lib/api";
 
 type Permintaan = {
   id: string; nomor: string; status: string;
-  petani: { kode: string; warga: { nama: string } };
-  detail: { produkPupuk: { id: string; nama: string; satuan: string } }[];
+  petani: {
+    kode: string;
+    warga: { nama: string; nasabah: { kode: string; saldo: number; status: string }[] };
+  };
+  detail: { produkPupuk: { id: string; nama: string; satuan: string; harga: number } }[];
 };
 type Sisa = { produkPupukId: string; diminta: string; terkirim: string; sisa: string };
+const LABEL_BAYAR: Record<string, string> = {
+  SALDO: "Potong tabungan",
+  TUNAI: "Tunai ke petugas",
+  SUBSIDI: "Subsidi desa",
+};
 type Distribusi = {
   id: string; nomor: string; tanggalDistribusi: string; status: string; keterangan: string | null;
+  totalNilai: number; metodeBayar: string;
   permintaan: { nomor: string; petani: { kode: string; warga: { nama: string; dusun: string | null } } };
-  detail: { id: string; jumlah: string; produkPupuk: { nama: string; satuan: string } }[];
+  detail: { id: string; jumlah: string; hargaSatuan: number; subtotal: number; produkPupuk: { nama: string; satuan: string } }[];
 };
 
 const WARNA: Record<string, string> = {
@@ -70,7 +79,7 @@ export default function HalamanDistribusi() {
       <div className="card">
         {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
-            <thead><tr><th>Nomor</th><th>Permintaan</th><th>Penerima</th><th>Tanggal</th><th>Status</th><th></th><th></th></tr></thead>
+            <thead><tr><th>Nomor</th><th>Permintaan</th><th>Penerima</th><th>Tanggal</th><th className="text-right">Nilai</th><th>Bayar</th><th>Status</th><th></th><th></th></tr></thead>
             <tbody>
               {rows.map((d) => (
                 <Fragment key={d.id}>
@@ -79,6 +88,8 @@ export default function HalamanDistribusi() {
                     <td className="font-mono text-xs text-muted-foreground">{d.permintaan.nomor}</td>
                     <td>{d.permintaan.petani.warga.nama}<br /><span className="text-xs text-muted-foreground">{d.permintaan.petani.warga.dusun ?? "-"}</span></td>
                     <td className="text-xs">{new Date(d.tanggalDistribusi).toLocaleDateString("id-ID")}</td>
+                    <td className="text-right tabular-nums">Rp {d.totalNilai.toLocaleString("id-ID")}</td>
+                    <td className="text-xs text-muted-foreground">{LABEL_BAYAR[d.metodeBayar] ?? d.metodeBayar}</td>
                     <td><span className={`pill ${WARNA[d.status] ?? ""}`}>{d.status}</span></td>
                     <td><button onClick={() => setDibuka(dibuka === d.id ? null : d.id)} className="text-xs text-muted-foreground hover:underline">{dibuka === d.id ? "Tutup" : "Rincian"}</button></td>
                     <td className="space-x-2">
@@ -89,12 +100,12 @@ export default function HalamanDistribusi() {
                   </tr>
                   {dibuka === d.id && (
                     <tr>
-                      <td colSpan={7} className="bg-muted p-3">
+                      <td colSpan={9} className="bg-muted p-3">
                         <table className="tbl">
-                          <thead><tr><th>Produk</th><th className="text-right">Jumlah</th></tr></thead>
+                          <thead><tr><th>Produk</th><th className="text-right">Jumlah</th><th className="text-right">Harga</th><th className="text-right">Subtotal</th></tr></thead>
                           <tbody>
                             {d.detail.map((x) => (
-                              <tr key={x.id}><td>{x.produkPupuk.nama}</td><td className="text-right tabular-nums">{Number(x.jumlah).toLocaleString("id-ID")} {x.produkPupuk.satuan.toLowerCase()}</td></tr>
+                              <tr key={x.id}><td>{x.produkPupuk.nama}</td><td className="text-right tabular-nums">{Number(x.jumlah).toLocaleString("id-ID")} {x.produkPupuk.satuan.toLowerCase()}</td><td className="text-right tabular-nums">Rp {x.hargaSatuan.toLocaleString("id-ID")}</td><td className="text-right tabular-nums">Rp {x.subtotal.toLocaleString("id-ID")}</td></tr>
                             ))}
                           </tbody>
                         </table>
@@ -104,7 +115,7 @@ export default function HalamanDistribusi() {
                   )}
                 </Fragment>
               ))}
-              {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Belum ada distribusi.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">Belum ada distribusi.</td></tr>}
             </tbody>
           </table>
         )}
@@ -117,10 +128,23 @@ function FormDistribusi({ siapSalur, onSelesai }: { siapSalur: Permintaan[]; onS
   const [permintaanId, setPermintaanId] = useState("");
   const [sisa, setSisa] = useState<Sisa[]>([]);
   const [jumlah, setJumlah] = useState<Record<string, string>>({});
+  const [metodeBayar, setMetodeBayar] = useState("SALDO");
   const [galat, setGalat] = useState<string | null>(null);
   const [menyimpan, setMenyimpan] = useState(false);
 
   const permintaan = siapSalur.find((p) => p.id === permintaanId);
+  const rekening = permintaan?.petani.warga.nasabah.find((n) => n.status === "AKTIF") ?? null;
+
+  // Biaya dihitung ulang di klien hanya sebagai pratinjau bagi operator.
+  // Angka yang mengikat tetap dihitung server saat penyaluran disimpan.
+  const totalBiaya = sisa.reduce((acc, s) => {
+    const n = Number(jumlah[s.produkPupukId] ?? 0);
+    if (!n) return acc;
+    const p = permintaan?.detail.find((d) => d.produkPupuk.id === s.produkPupukId);
+    return acc + Math.round(n * (p?.produkPupuk.harga ?? 0));
+  }, 0);
+
+  const saldoKurang = metodeBayar === "SALDO" && rekening ? rekening.saldo < totalBiaya : false;
 
   const muatSisa = useCallback(async () => {
     if (!permintaanId) { setSisa([]); return; }
@@ -139,7 +163,7 @@ function FormDistribusi({ siapSalur, onSelesai }: { siapSalur: Permintaan[]; onS
           const p = permintaan?.detail.find((d) => d.produkPupuk.id === s.produkPupukId);
           return { produkPupukId: s.produkPupukId, jumlah: Number(jumlah[s.produkPupukId]), satuan: p?.produkPupuk.satuan ?? "KG" };
         });
-      await api.post("/api/distribusi", { permintaanId, item });
+      await api.post("/api/distribusi", { permintaanId, metodeBayar, item });
       onSelesai();
     } catch (err) { setGalat(err instanceof ApiError ? err.message : "Gagal menyimpan."); }
     finally { setMenyimpan(false); }
@@ -185,7 +209,47 @@ function FormDistribusi({ siapSalur, onSelesai }: { siapSalur: Permintaan[]; onS
         </div>
       )}
 
-      {galat && <p className="text-sm text-red-600">{galat}</p>}
+      {permintaan && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="label">Cara pembayaran</label>
+            <select className="field" value={metodeBayar} onChange={(e) => setMetodeBayar(e.target.value)}>
+              <option value="SALDO">Potong tabungan bank sampah</option>
+              <option value="TUNAI">Tunai ke petugas</option>
+              <option value="SUBSIDI">Subsidi desa (gratis)</option>
+            </select>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/50 p-3">
+            <p className="text-xs text-muted-foreground">Total biaya pupuk</p>
+            <p className="text-xl font-bold text-foreground">Rp {totalBiaya.toLocaleString("id-ID")}</p>
+            {metodeBayar === "SALDO" && (
+              rekening ? (
+                <p className={`mt-1 text-xs ${saldoKurang ? "text-destructive" : "text-muted-foreground"}`}>
+                  Saldo {rekening.kode}: Rp {rekening.saldo.toLocaleString("id-ID")}
+                  {saldoKurang && ` — kurang Rp ${(totalBiaya - rekening.saldo).toLocaleString("id-ID")}`}
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-destructive">Petani ini tidak punya rekening bank sampah aktif.</p>
+              )
+            )}
+            {metodeBayar === "SUBSIDI" && (
+              <p className="mt-1 text-xs text-muted-foreground">Nilainya tetap dicatat, tetapi tidak menagih siapa pun.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {saldoKurang && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-foreground">
+          <p className="font-semibold">Saldo tidak mencukupi. Dua pilihan:</p>
+          <p className="mt-1">
+            Warga menyetor sampah lagi ke bank sampah untuk menambah saldonya, atau ubah cara pembayaran menjadi tunai
+            ke petugas.
+          </p>
+        </div>
+      )}
+
+      {galat && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{galat}</p>}
       <button className="btn" disabled={menyimpan || sisa.length === 0}>{menyimpan ? "Menyimpan..." : "Salurkan pupuk"}</button>
     </form>
   );
