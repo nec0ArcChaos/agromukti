@@ -31,8 +31,8 @@ export default function HalamanKomoditas() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Komoditas</h1>
-          <p className="text-sm text-neutral-500">Dosis pupuk per hektare dipakai menghitung usulan kebutuhan pupuk tiap lahan.</p>
+          <h1 className="text-lg font-semibold text-foreground">Komoditas</h1>
+          <p className="text-sm text-muted-foreground">Dosis pupuk per hektare dipakai menghitung usulan kebutuhan pupuk tiap lahan.</p>
         </div>
         <button className="btn" onClick={() => setFormTerbuka((v) => !v)}>{formTerbuka ? "Tutup formulir" : "+ Komoditas baru"}</button>
       </div>
@@ -40,7 +40,7 @@ export default function HalamanKomoditas() {
       {formTerbuka && <FormKomoditas onSelesai={() => { setFormTerbuka(false); muat(); }} />}
 
       <div className="card">
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead>
               <tr><th>Kode</th><th>Nama</th><th>Deskripsi</th><th className="text-right">Dosis/ha</th><th className="text-right">Lahan</th><th className="text-right">Panen</th><th>Status</th></tr>
@@ -50,14 +50,14 @@ export default function HalamanKomoditas() {
                 <tr key={k.id}>
                   <td className="font-mono text-xs">{k.kode}</td>
                   <td>{k.nama}</td>
-                  <td className="text-xs text-neutral-500">{k.deskripsi ?? "-"}</td>
+                  <td className="text-xs text-muted-foreground">{k.deskripsi ?? "-"}</td>
                   <td className="text-right tabular-nums">{k.dosisPupukPerHa} kg</td>
                   <td className="text-right tabular-nums">{k._count.lahan}</td>
                   <td className="text-right tabular-nums">{k._count.panen}</td>
-                  <td><span className={`pill ${k.aktif ? "bg-emerald-100 text-emerald-800" : "bg-neutral-200 text-neutral-600"}`}>{k.aktif ? "Aktif" : "Nonaktif"}</span></td>
+                  <td><span className={`pill ${k.aktif ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"}`}>{k.aktif ? "Aktif" : "Nonaktif"}</span></td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-neutral-400">Belum ada komoditas.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Belum ada komoditas.</td></tr>}
             </tbody>
           </table>
         )}

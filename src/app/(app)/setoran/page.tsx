@@ -85,8 +85,8 @@ export default function HalamanSetoran() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900">Setoran Sampah Anorganik</h1>
-        <p className="text-sm text-neutral-500">Hanya mencatat berat. Nilai rupiah baru muncul saat pengepul membeli lewat menu Pengambilan Pengepul.</p>
+        <h1 className="text-lg font-semibold text-foreground">Setoran Sampah Anorganik</h1>
+        <p className="text-sm text-muted-foreground">Hanya mencatat berat. Nilai rupiah baru muncul saat pengepul membeli lewat menu Pengambilan Pengepul.</p>
       </div>
 
       <form onSubmit={submit} className="card grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -124,9 +124,9 @@ export default function HalamanSetoran() {
       </form>
 
       <div className="card">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">Setoran terbaru</h2>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Setoran terbaru</h2>
         {memuat ? (
-          <p className="text-sm text-neutral-500">Memuat...</p>
+          <p className="text-sm text-muted-foreground">Memuat...</p>
         ) : (
           <table className="tbl">
             <thead>
@@ -137,7 +137,7 @@ export default function HalamanSetoran() {
                 <tr key={s.id}>
                   <td className="font-mono text-xs">{s.nomor}</td>
                   <td>{s.nasabah.warga.nama}</td>
-                  <td className="text-xs text-neutral-500">{s.kategoriSampah?.nama ?? "-"}</td>
+                  <td className="text-xs text-muted-foreground">{s.kategoriSampah?.nama ?? "-"}</td>
                   <td className="text-right tabular-nums">{s.beratKg} kg</td>
                   <td>
                     <span className={`pill ${
@@ -156,7 +156,7 @@ export default function HalamanSetoran() {
                 </tr>
               ))}
               {setoranList.length === 0 && (
-                <tr><td colSpan={7} className="py-6 text-center text-neutral-400">Belum ada setoran.</td></tr>
+                <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Belum ada setoran.</td></tr>
               )}
             </tbody>
           </table>

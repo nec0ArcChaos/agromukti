@@ -22,14 +22,14 @@ export default function HalamanPengepul() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-neutral-900">Pengepul</h1>
+        <h1 className="text-lg font-semibold text-foreground">Pengepul</h1>
         <button className="btn" onClick={() => setFormTerbuka((v) => !v)}>{formTerbuka ? "Tutup formulir" : "+ Pengepul baru"}</button>
       </div>
 
       {formTerbuka && <FormPengepul onSelesai={() => { setFormTerbuka(false); muat(); }} />}
 
       <div className="card">
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead><tr><th>Kode</th><th>Nama</th><th>No. HP</th><th>Alamat</th><th>Status</th></tr></thead>
             <tbody>
@@ -38,11 +38,11 @@ export default function HalamanPengepul() {
                   <td className="font-mono text-xs">{p.kode}</td>
                   <td>{p.nama}</td>
                   <td>{p.noHp ?? "-"}</td>
-                  <td className="text-xs text-neutral-500">{p.alamat ?? "-"}</td>
-                  <td><span className={`pill ${p.aktif ? "bg-emerald-100 text-emerald-800" : "bg-neutral-200 text-neutral-600"}`}>{p.aktif ? "Aktif" : "Nonaktif"}</span></td>
+                  <td className="text-xs text-muted-foreground">{p.alamat ?? "-"}</td>
+                  <td><span className={`pill ${p.aktif ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"}`}>{p.aktif ? "Aktif" : "Nonaktif"}</span></td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-neutral-400">Belum ada pengepul.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-muted-foreground">Belum ada pengepul.</td></tr>}
             </tbody>
           </table>
         )}

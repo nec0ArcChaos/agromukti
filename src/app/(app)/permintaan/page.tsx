@@ -18,7 +18,7 @@ const WARNA: Record<string, string> = {
   DIPROSES: "bg-sky-100 text-sky-800",
   DISETUJUI: "bg-emerald-100 text-emerald-800",
   DITOLAK: "bg-red-100 text-red-700",
-  SELESAI: "bg-neutral-200 text-neutral-700",
+  SELESAI: "bg-muted text-muted-foreground",
 };
 
 export default function HalamanPermintaan() {
@@ -58,8 +58,8 @@ export default function HalamanPermintaan() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Permintaan Pupuk</h1>
-          <p className="text-sm text-neutral-500">Permintaan boleh melebihi stok - stok baru mengikat saat disalurkan.</p>
+          <h1 className="text-lg font-semibold text-foreground">Permintaan Pupuk</h1>
+          <p className="text-sm text-muted-foreground">Permintaan boleh melebihi stok - stok baru mengikat saat disalurkan.</p>
         </div>
         <button className="btn" onClick={() => setFormTerbuka((v) => !v)}>{formTerbuka ? "Tutup formulir" : "+ Ajukan permintaan"}</button>
       </div>
@@ -67,7 +67,7 @@ export default function HalamanPermintaan() {
       {formTerbuka && <FormPermintaan petaniList={petaniList} produkList={produkList} onSelesai={() => { setFormTerbuka(false); muat(); }} />}
 
       <div className="card">
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead><tr><th>Nomor</th><th>Petani</th><th>Tanggal</th><th className="text-right">Item</th><th>Status</th><th></th><th></th></tr></thead>
             <tbody>
@@ -75,15 +75,15 @@ export default function HalamanPermintaan() {
                 <Fragment key={p.id}>
                   <tr>
                     <td className="font-mono text-xs">{p.nomor}</td>
-                    <td>{p.petani.warga.nama}<br /><span className="text-xs text-neutral-400">{p.petani.kelompokTani ?? p.petani.kode}</span></td>
+                    <td>{p.petani.warga.nama}<br /><span className="text-xs text-muted-foreground">{p.petani.kelompokTani ?? p.petani.kode}</span></td>
                     <td className="text-xs">{new Date(p.tanggal).toLocaleDateString("id-ID")}</td>
                     <td className="text-right tabular-nums">{p.detail.length}</td>
                     <td><span className={`pill ${WARNA[p.status] ?? ""}`}>{p.status}</span></td>
-                    <td><button onClick={() => setDibuka(dibuka === p.id ? null : p.id)} className="text-xs text-neutral-500 hover:underline">{dibuka === p.id ? "Tutup" : "Rincian"}</button></td>
+                    <td><button onClick={() => setDibuka(dibuka === p.id ? null : p.id)} className="text-xs text-muted-foreground hover:underline">{dibuka === p.id ? "Tutup" : "Rincian"}</button></td>
                     <td className="space-x-2">
                       {(p.status === "DIAJUKAN" || p.status === "DIPROSES") && (
                         <>
-                          <button onClick={() => setujui(p.id)} className="text-xs text-emerald-700 hover:underline">Setujui</button>
+                          <button onClick={() => setujui(p.id)} className="text-xs text-primary hover:underline">Setujui</button>
                           <button onClick={() => tolak(p.id)} className="text-xs text-red-600 hover:underline">Tolak</button>
                         </>
                       )}
@@ -91,7 +91,7 @@ export default function HalamanPermintaan() {
                   </tr>
                   {dibuka === p.id && (
                     <tr>
-                      <td colSpan={7} className="bg-neutral-50 p-3">
+                      <td colSpan={7} className="bg-muted p-3">
                         <table className="tbl">
                           <thead><tr><th>Produk</th><th className="text-right">Diminta</th><th className="text-right">Stok tersedia</th></tr></thead>
                           <tbody>
@@ -108,7 +108,7 @@ export default function HalamanPermintaan() {
                         </table>
                         {p.alasanTolak && <p className="mt-2 text-xs text-red-600">Alasan ditolak: {p.alasanTolak}</p>}
                         {p.distribusi.length > 0 && (
-                          <p className="mt-2 text-xs text-neutral-600">
+                          <p className="mt-2 text-xs text-muted-foreground">
                             Distribusi: {p.distribusi.map((d) => `${d.nomor} (${d.status})`).join(", ")}
                           </p>
                         )}
@@ -117,7 +117,7 @@ export default function HalamanPermintaan() {
                   )}
                 </Fragment>
               ))}
-              {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-neutral-400">Belum ada permintaan.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Belum ada permintaan.</td></tr>}
             </tbody>
           </table>
         )}
@@ -181,7 +181,7 @@ function FormPermintaan({
             )}
           </div>
         ))}
-        <button type="button" onClick={() => setItem((prev) => [...prev, { produkPupukId: "", jumlah: "" }])} className="text-xs text-emerald-700 hover:underline">+ Tambah baris</button>
+        <button type="button" onClick={() => setItem((prev) => [...prev, { produkPupukId: "", jumlah: "" }])} className="text-xs text-primary hover:underline">+ Tambah baris</button>
       </div>
 
       {galat && <p className="text-sm text-red-600">{galat}</p>}

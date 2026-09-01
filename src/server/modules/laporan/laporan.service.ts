@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/server/lib/db";
 import { totalBerat } from "@/server/lib/money";
+import { keHektare, keKilogram } from "@/server/lib/satuan";
 
 type Rentang = { dari?: Date; sampai?: Date };
 
@@ -158,5 +159,55 @@ export async function ringkasanDashboard() {
     saldoKasSaatIni: saldoKas?.saldoSesudah ?? 0,
     totalKewajibanTabungan: kewajibanTabungan._sum.saldo ?? 0,
     penarikanMenunggu: penarikanPending,
+  };
+}
+
+/**
+ * Ringkasan lintas tiga pilar untuk beranda.
+ *
+ * Sengaja satu fungsi, bukan tiga panggilan terpisah dari halaman: beranda
+ * adalah tempat pertama yang dibuka operator, dan menjalankan query-nya
+ * bersamaan jauh lebih cepat daripada berurutan.
+ */
+export async function ringkasanTerpadu() {
+  const [
+    bankSampah,
+    stokOrganikAgg,
+    produksiAgg,
+    petaniAktif,
+    lahanAktif,
+    panenAgg,
+    produkPupuk,
+    permintaanMenunggu,
+  ] = await Promise.all([
+    ringkasanDashboard(),
+    prisma.mutasiSampahOrganik.groupBy({ by: ["arah"], _sum: { beratKg: true } }),
+    prisma.produksiPupuk.groupBy({ by: ["status"], _count: true }),
+    prisma.petani.count({ where: { status: "AKTIF" } }),
+    prisma.lahan.findMany({ where: { status: "AKTIF" }, select: { luas: true, satuan: true } }),
+    prisma.panen.findMany({ select: { jumlahPanen: true, satuan: true } }),
+    prisma.produkPupuk.findMany({ where: { aktif: true }, select: { nama: true, stok: true, satuan: true } }),
+    prisma.permintaanPupuk.count({ where: { status: { in: ["DIAJUKAN", "DIPROSES"] } } }),
+  ]);
+
+  const stokOrganik = stokOrganikAgg.reduce((acc, a) => {
+    const j = a._sum.beratKg ?? new Prisma.Decimal(0);
+    return a.arah === "KELUAR" ? acc.sub(j) : acc.add(j);
+  }, new Prisma.Decimal(0));
+
+  return {
+    bankSampah,
+    organik: {
+      stokKg: stokOrganik,
+      batchProses: produksiAgg.find((s) => s.status === "PROSES")?._count ?? 0,
+      batchSelesai: produksiAgg.find((s) => s.status === "SELESAI")?._count ?? 0,
+    },
+    pertanian: {
+      petaniAktif,
+      totalHektare: lahanAktif.reduce((a, l) => a.add(keHektare(l.luas, l.satuan)), new Prisma.Decimal(0)),
+      totalPanenKg: panenAgg.reduce((a, p) => a.add(keKilogram(p.jumlahPanen, p.satuan)), new Prisma.Decimal(0)),
+      permintaanMenunggu,
+      stokPupuk: produkPupuk,
+    },
   };
 }

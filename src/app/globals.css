@@ -1,48 +1,169 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
+/*
+ * Design system AgroMukti.
+ *
+ * Nilainya diambil dari assets/css/style.css milik aplikasi PHP kolaborator
+ * supaya tampilan sistem terpadu ini tetap dikenali sebagai AgroMukti -
+ * teal sebagai warna utama, sidebar gelap, Plus Jakarta Sans.
+ */
 :root {
-  color-scheme: light;
+  --radius: 0.75rem; /* 12px, sama dengan --radius asli */
+
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+
+  --primary: #0f766e;
+  --primary-foreground: #ffffff;
+  --primary-light: #14b8a6;
+  --primary-dark: #0d9488;
+
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #d97706;
+  --accent-foreground: #ffffff;
+  --info: #0284c7;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --border: #e2e8f0;
+  --input: #cbd5e1;
+  --ring: #14b8a6;
+
+  /* Sidebar gelap - ciri paling khas tampilan AgroMukti. */
+  --sidebar: #0b131e;
+  --sidebar-foreground: #94a3b8;
+  --sidebar-hover: rgba(20, 184, 166, 0.12);
+  --sidebar-active: rgba(20, 184, 166, 0.18);
+  --sidebar-active-foreground: #2dd4bf;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+
+  --sidebar-width: 265px;
+  --topbar-height: 68px;
 }
 
-body {
-  font-feature-settings: "tnum" 1;
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-info: var(--info);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-active-foreground: var(--sidebar-active-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Util kecil dipakai berulang di halaman uji coba. */
-.card {
-  @apply rounded-lg border border-neutral-200 bg-white p-5 shadow-sm;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    /* Angka pada tabel keuangan harus sejajar antar baris. */
+    font-feature-settings: "tnum" 1;
+  }
 }
 
-.btn {
-  @apply inline-flex items-center justify-center rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50;
+/*
+ * Kelas utilitas yang dipakai seluruh halaman modul. Dipertahankan sebagai
+ * kelas (bukan diganti komponen satu per satu) supaya 18 halaman yang sudah
+ * jadi langsung ikut bergaya AgroMukti tanpa ditulis ulang - dan komponen
+ * shadcn tetap bisa dipakai berdampingan untuk hal yang lebih rumit.
+ */
+@layer components {
+  .card {
+    @apply rounded-lg border border-border bg-card p-5;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.03);
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground
+           transition-colors hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+           focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-input bg-card px-4 py-2 text-sm font-medium
+           text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2
+           focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-destructive px-4 py-2 text-sm font-semibold
+           text-destructive-foreground transition-colors hover:brightness-95 focus-visible:outline-none
+           focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .field {
+    @apply w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground transition-shadow
+           placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30
+           disabled:cursor-not-allowed disabled:bg-muted;
+  }
+
+  .label {
+    @apply mb-1 block text-sm font-medium text-foreground;
+  }
+
+  table.tbl {
+    @apply w-full border-collapse text-sm;
+  }
+  table.tbl th {
+    @apply border-b border-border bg-muted px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground;
+  }
+  table.tbl td {
+    @apply border-b border-border/60 px-3 py-2.5 align-middle;
+  }
+  table.tbl tbody tr:hover {
+    @apply bg-muted/40;
+  }
+  table.tbl tfoot td {
+    @apply border-t-2 border-border bg-muted/60 font-semibold;
+  }
+
+  .pill {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
 }
 
-.btn-secondary {
-  @apply inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50;
-}
-
-.btn-danger {
-  @apply inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50;
-}
-
-.field {
-  @apply w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600;
-}
-
-.label {
-  @apply mb-1 block text-sm font-medium text-neutral-700;
-}
-
-table.tbl {
-  @apply w-full border-collapse text-sm;
-}
-table.tbl th {
-  @apply border-b border-neutral-200 bg-neutral-50 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500;
-}
-table.tbl td {
-  @apply border-b border-neutral-100 px-3 py-2;
-}
-
-.pill {
-  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+/* Halaman laporan dicetak sebagai dokumen resmi - kerangka aplikasi dibuang. */
+@media print {
+  .tanpa-cetak {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
 }

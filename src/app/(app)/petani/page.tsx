@@ -32,8 +32,8 @@ export default function HalamanPetani() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Petani</h1>
-          <p className="text-sm text-neutral-500">Identitasnya diambil dari data warga - satu orang bisa sekaligus jadi nasabah bank sampah.</p>
+          <h1 className="text-lg font-semibold text-foreground">Petani</h1>
+          <p className="text-sm text-muted-foreground">Identitasnya diambil dari data warga - satu orang bisa sekaligus jadi nasabah bank sampah.</p>
         </div>
         <button className="btn" onClick={() => setFormTerbuka((v) => !v)}>
           {formTerbuka ? "Tutup formulir" : "+ Petani baru"}
@@ -44,7 +44,7 @@ export default function HalamanPetani() {
 
       <div className="card">
         <input className="field mb-3 max-w-xs" placeholder="Cari nama, kode, kelompok tani..." value={q} onChange={(e) => setQ(e.target.value)} />
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead>
               <tr><th>Kode</th><th>Nama</th><th>Dusun</th><th>Kelompok tani</th><th className="text-right">Lahan</th><th className="text-right">Panen</th><th>Status</th></tr>
@@ -55,13 +55,13 @@ export default function HalamanPetani() {
                   <td className="font-mono text-xs">{p.kode}</td>
                   <td>{p.warga.nama}</td>
                   <td>{p.warga.dusun ?? "-"}</td>
-                  <td className="text-xs text-neutral-500">{p.kelompokTani ?? "-"}</td>
+                  <td className="text-xs text-muted-foreground">{p.kelompokTani ?? "-"}</td>
                   <td className="text-right tabular-nums">{p._count.lahan}</td>
                   <td className="text-right tabular-nums">{p._count.panen}</td>
-                  <td><span className={`pill ${p.status === "AKTIF" ? "bg-emerald-100 text-emerald-800" : "bg-neutral-200 text-neutral-600"}`}>{p.status}</span></td>
+                  <td><span className={`pill ${p.status === "AKTIF" ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"}`}>{p.status}</span></td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-neutral-400">Belum ada petani.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Belum ada petani.</td></tr>}
             </tbody>
           </table>
         )}
@@ -134,7 +134,7 @@ function FormPetani({ onSelesai }: { onSelesai: () => void }) {
               <option key={w.id} value={w.id}>{w.nama} {w.dusun ? `(${w.dusun})` : ""}</option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-neutral-500">Warga yang sudah menjadi petani tidak ditampilkan.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Warga yang sudah menjadi petani tidak ditampilkan.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">

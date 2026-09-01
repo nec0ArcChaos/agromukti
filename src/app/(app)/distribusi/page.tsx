@@ -57,8 +57,8 @@ export default function HalamanDistribusi() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Distribusi Pupuk</h1>
-          <p className="text-sm text-neutral-500">Hanya permintaan yang sudah disetujui yang bisa disalurkan, dan tidak boleh melebihi sisa yang disetujui.</p>
+          <h1 className="text-lg font-semibold text-foreground">Distribusi Pupuk</h1>
+          <p className="text-sm text-muted-foreground">Hanya permintaan yang sudah disetujui yang bisa disalurkan, dan tidak boleh melebihi sisa yang disetujui.</p>
         </div>
         <button className="btn" disabled={siapSalur.length === 0} onClick={() => setFormTerbuka((v) => !v)}>
           {formTerbuka ? "Tutup formulir" : `+ Salurkan (${siapSalur.length} siap)`}
@@ -68,7 +68,7 @@ export default function HalamanDistribusi() {
       {formTerbuka && <FormDistribusi siapSalur={siapSalur} onSelesai={() => { setFormTerbuka(false); muat(); }} />}
 
       <div className="card">
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead><tr><th>Nomor</th><th>Permintaan</th><th>Penerima</th><th>Tanggal</th><th>Status</th><th></th><th></th></tr></thead>
             <tbody>
@@ -76,20 +76,20 @@ export default function HalamanDistribusi() {
                 <Fragment key={d.id}>
                   <tr>
                     <td className="font-mono text-xs">{d.nomor}</td>
-                    <td className="font-mono text-xs text-neutral-500">{d.permintaan.nomor}</td>
-                    <td>{d.permintaan.petani.warga.nama}<br /><span className="text-xs text-neutral-400">{d.permintaan.petani.warga.dusun ?? "-"}</span></td>
+                    <td className="font-mono text-xs text-muted-foreground">{d.permintaan.nomor}</td>
+                    <td>{d.permintaan.petani.warga.nama}<br /><span className="text-xs text-muted-foreground">{d.permintaan.petani.warga.dusun ?? "-"}</span></td>
                     <td className="text-xs">{new Date(d.tanggalDistribusi).toLocaleDateString("id-ID")}</td>
                     <td><span className={`pill ${WARNA[d.status] ?? ""}`}>{d.status}</span></td>
-                    <td><button onClick={() => setDibuka(dibuka === d.id ? null : d.id)} className="text-xs text-neutral-500 hover:underline">{dibuka === d.id ? "Tutup" : "Rincian"}</button></td>
+                    <td><button onClick={() => setDibuka(dibuka === d.id ? null : d.id)} className="text-xs text-muted-foreground hover:underline">{dibuka === d.id ? "Tutup" : "Rincian"}</button></td>
                     <td className="space-x-2">
                       {d.status === "DIPROSES" && <button onClick={() => ubahStatus(d.id, "DIKIRIM")} className="text-xs text-sky-700 hover:underline">Kirim</button>}
-                      {d.status === "DIKIRIM" && <button onClick={() => ubahStatus(d.id, "DITERIMA")} className="text-xs text-emerald-700 hover:underline">Diterima</button>}
+                      {d.status === "DIKIRIM" && <button onClick={() => ubahStatus(d.id, "DITERIMA")} className="text-xs text-primary hover:underline">Diterima</button>}
                       {d.status !== "DIBATALKAN" && <button onClick={() => batalkan(d.id)} className="text-xs text-red-600 hover:underline">Batalkan</button>}
                     </td>
                   </tr>
                   {dibuka === d.id && (
                     <tr>
-                      <td colSpan={7} className="bg-neutral-50 p-3">
+                      <td colSpan={7} className="bg-muted p-3">
                         <table className="tbl">
                           <thead><tr><th>Produk</th><th className="text-right">Jumlah</th></tr></thead>
                           <tbody>
@@ -98,13 +98,13 @@ export default function HalamanDistribusi() {
                             ))}
                           </tbody>
                         </table>
-                        {d.keterangan && <p className="mt-2 text-xs text-neutral-600">{d.keterangan}</p>}
+                        {d.keterangan && <p className="mt-2 text-xs text-muted-foreground">{d.keterangan}</p>}
                       </td>
                     </tr>
                   )}
                 </Fragment>
               ))}
-              {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-neutral-400">Belum ada distribusi.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Belum ada distribusi.</td></tr>}
             </tbody>
           </table>
         )}

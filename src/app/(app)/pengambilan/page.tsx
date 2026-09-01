@@ -108,8 +108,8 @@ export default function HalamanPengambilan() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900">Pengambilan Pengepul</h1>
-        <p className="text-sm text-neutral-500">Pilih setoran yang diambil pengepul hari ini, masukkan total yang benar-benar dibayarkan - sistem membagi nilainya ke tiap nasabah sesuai berat setorannya.</p>
+        <h1 className="text-lg font-semibold text-foreground">Pengambilan Pengepul</h1>
+        <p className="text-sm text-muted-foreground">Pilih setoran yang diambil pengepul hari ini, masukkan total yang benar-benar dibayarkan - sistem membagi nilainya ke tiap nasabah sesuai berat setorannya.</p>
       </div>
 
       <form onSubmit={submit} className="card space-y-4">
@@ -125,7 +125,7 @@ export default function HalamanPengambilan() {
             <label className="label">Total dibayar pengepul (Rp)</label>
             <input type="number" min="1" className="field" value={totalNilai} onChange={(e) => setTotalNilai(e.target.value)} required />
             {beratTerpilih > 0 && totalNilai && (
-              <p className="mt-1 text-xs text-neutral-500">≈ Rp {hargaPerKgEfektif.toLocaleString("id-ID", { maximumFractionDigits: 0 })}/kg untuk {beratTerpilih.toFixed(2)} kg terpilih</p>
+              <p className="mt-1 text-xs text-muted-foreground">≈ Rp {hargaPerKgEfektif.toLocaleString("id-ID", { maximumFractionDigits: 0 })}/kg untuk {beratTerpilih.toFixed(2)} kg terpilih</p>
             )}
           </div>
         </div>
@@ -133,9 +133,9 @@ export default function HalamanPengambilan() {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label className="label mb-0">Setoran menunggu ({menunggu.length})</label>
-            <button type="button" onClick={pilihSemua} className="text-xs text-emerald-700 hover:underline">Pilih semua</button>
+            <button type="button" onClick={pilihSemua} className="text-xs text-primary hover:underline">Pilih semua</button>
           </div>
-          <div className="max-h-72 overflow-y-auto rounded-md border border-neutral-200">
+          <div className="max-h-72 overflow-y-auto rounded-md border border-border">
             <table className="tbl">
               <thead><tr><th></th><th>Nomor</th><th>Nasabah</th><th>Kategori</th><th className="text-right">Berat</th></tr></thead>
               <tbody>
@@ -144,15 +144,15 @@ export default function HalamanPengambilan() {
                     <td><input type="checkbox" checked={terpilih.has(s.id)} onChange={() => toggle(s.id)} onClick={(e) => e.stopPropagation()} /></td>
                     <td className="font-mono text-xs">{s.nomor}</td>
                     <td>{s.nasabah.kode} - {s.nasabah.warga.nama}</td>
-                    <td className="text-xs text-neutral-500">{s.kategoriSampah?.nama ?? "-"}</td>
+                    <td className="text-xs text-muted-foreground">{s.kategoriSampah?.nama ?? "-"}</td>
                     <td className="text-right tabular-nums">{s.beratKg} kg</td>
                   </tr>
                 ))}
-                {menunggu.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-neutral-400">Tidak ada setoran menunggu.</td></tr>}
+                {menunggu.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-muted-foreground">Tidak ada setoran menunggu.</td></tr>}
               </tbody>
             </table>
           </div>
-          <p className="mt-2 text-xs text-neutral-500">{terpilih.size} setoran dipilih - total {beratTerpilih.toFixed(2)} kg</p>
+          <p className="mt-2 text-xs text-muted-foreground">{terpilih.size} setoran dipilih - total {beratTerpilih.toFixed(2)} kg</p>
         </div>
 
         {galat && <p className="text-sm text-red-600">{galat}</p>}
@@ -162,8 +162,8 @@ export default function HalamanPengambilan() {
       </form>
 
       <div className="card">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">Riwayat pengambilan</h2>
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Riwayat pengambilan</h2>
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead><tr><th>Nomor</th><th>Pengepul</th><th className="text-right">Berat</th><th className="text-right">Total</th><th>Status</th><th></th><th></th></tr></thead>
             <tbody>
@@ -175,12 +175,12 @@ export default function HalamanPengambilan() {
                     <td className="text-right tabular-nums">{p.totalBeratKg} kg</td>
                     <td className="text-right tabular-nums">Rp {p.totalNilai.toLocaleString("id-ID")}</td>
                     <td><span className={`pill ${p.status === "POSTED" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-700"}`}>{p.status}</span></td>
-                    <td><button onClick={() => setDibuka(dibuka === p.id ? null : p.id)} className="text-xs text-neutral-500 hover:underline">{dibuka === p.id ? "Tutup" : "Rincian"}</button></td>
+                    <td><button onClick={() => setDibuka(dibuka === p.id ? null : p.id)} className="text-xs text-muted-foreground hover:underline">{dibuka === p.id ? "Tutup" : "Rincian"}</button></td>
                     <td>{p.status === "POSTED" && <button onClick={() => batalkan(p.id)} className="text-xs text-red-600 hover:underline">Batalkan</button>}</td>
                   </tr>
                   {dibuka === p.id && (
                     <tr>
-                      <td colSpan={7} className="bg-neutral-50 p-3">
+                      <td colSpan={7} className="bg-muted p-3">
                         <table className="tbl">
                           <thead><tr><th>Nasabah</th><th className="text-right">Berat</th><th className="text-right">Nilai alokasi</th></tr></thead>
                           <tbody>
@@ -194,7 +194,7 @@ export default function HalamanPengambilan() {
                   )}
                 </Fragment>
               ))}
-              {riwayat.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-neutral-400">Belum ada pengambilan.</td></tr>}
+              {riwayat.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Belum ada pengambilan.</td></tr>}
             </tbody>
           </table>
         )}

@@ -11,7 +11,7 @@ type Produk = {
 const WARNA: Record<string, string> = {
   TERSEDIA: "bg-emerald-100 text-emerald-800",
   HABIS: "bg-amber-100 text-amber-800",
-  NONAKTIF: "bg-neutral-200 text-neutral-600",
+  NONAKTIF: "bg-muted text-muted-foreground",
 };
 
 export default function HalamanUmkm() {
@@ -32,8 +32,8 @@ export default function HalamanUmkm() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Produk UMKM</h1>
-          <p className="text-sm text-neutral-500">Produk olahan warga, mis. Wajik Tomat dari hasil panen desa.</p>
+          <h1 className="text-lg font-semibold text-foreground">Produk UMKM</h1>
+          <p className="text-sm text-muted-foreground">Produk olahan warga, mis. Wajik Tomat dari hasil panen desa.</p>
         </div>
         <button className="btn" onClick={() => setFormTerbuka((v) => !v)}>{formTerbuka ? "Tutup formulir" : "+ Produk baru"}</button>
       </div>
@@ -41,21 +41,21 @@ export default function HalamanUmkm() {
       {formTerbuka && <FormProduk onSelesai={() => { setFormTerbuka(false); muat(); }} />}
 
       <div className="card">
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead><tr><th>Kode</th><th>Nama</th><th>Kategori</th><th className="text-right">Harga</th><th className="text-right">Stok</th><th>Status</th></tr></thead>
             <tbody>
               {rows.map((p) => (
                 <tr key={p.id}>
                   <td className="font-mono text-xs">{p.kode}</td>
-                  <td>{p.nama}<br /><span className="text-xs text-neutral-400">{p.deskripsi ?? ""}</span></td>
-                  <td className="text-xs text-neutral-500">{p.kategori ?? "-"}</td>
+                  <td>{p.nama}<br /><span className="text-xs text-muted-foreground">{p.deskripsi ?? ""}</span></td>
+                  <td className="text-xs text-muted-foreground">{p.kategori ?? "-"}</td>
                   <td className="text-right tabular-nums">Rp {p.harga.toLocaleString("id-ID")}</td>
                   <td className="text-right tabular-nums">{Number(p.stok).toLocaleString("id-ID")} {p.satuan.toLowerCase()}</td>
                   <td><span className={`pill ${WARNA[p.status] ?? ""}`}>{p.status}</span></td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-neutral-400">Belum ada produk UMKM.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Belum ada produk UMKM.</td></tr>}
             </tbody>
           </table>
         )}

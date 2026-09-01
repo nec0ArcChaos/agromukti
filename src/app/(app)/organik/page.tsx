@@ -34,8 +34,8 @@ export default function HalamanOrganik() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Sampah Organik</h1>
-          <p className="text-sm text-neutral-500">Bahan baku produksi pupuk. Setiap perubahan tercatat sebagai mutasi, bukan angka yang ditimpa.</p>
+          <h1 className="text-lg font-semibold text-foreground">Sampah Organik</h1>
+          <p className="text-sm text-muted-foreground">Bahan baku produksi pupuk. Setiap perubahan tercatat sebagai mutasi, bukan angka yang ditimpa.</p>
         </div>
         <div className="flex gap-2">
           <button className="btn" onClick={() => { setFormSetor((v) => !v); setFormKoreksi(false); }}>+ Setoran</button>
@@ -44,8 +44,8 @@ export default function HalamanOrganik() {
       </div>
 
       <div className="card border-emerald-300 bg-emerald-50">
-        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Stok bahan baku tersedia</p>
-        <p className="mt-1 text-2xl font-semibold text-neutral-900">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Stok bahan baku tersedia</p>
+        <p className="mt-1 text-2xl font-semibold text-foreground">
           {data ? Number(data.stokKg).toLocaleString("id-ID", { maximumFractionDigits: 2 }) : "—"} kg
         </p>
       </div>
@@ -54,22 +54,22 @@ export default function HalamanOrganik() {
       {formKoreksi && <FormKoreksi onSelesai={() => { setFormKoreksi(false); muat(); }} />}
 
       <div className="card">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">Buku besar sampah organik</h2>
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Buku besar sampah organik</h2>
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead><tr><th>Tanggal</th><th>Arah</th><th className="text-right">Berat</th><th>Warga</th><th>Sumber</th><th>Keterangan</th></tr></thead>
             <tbody>
               {data?.mutasi.map((m) => (
                 <tr key={m.id}>
                   <td className="text-xs">{new Date(m.tanggal).toLocaleDateString("id-ID")}</td>
-                  <td><span className={`pill ${m.arah === "MASUK" ? "bg-emerald-100 text-emerald-800" : m.arah === "KELUAR" ? "bg-red-100 text-red-700" : "bg-neutral-200 text-neutral-700"}`}>{m.arah}</span></td>
+                  <td><span className={`pill ${m.arah === "MASUK" ? "bg-emerald-100 text-emerald-800" : m.arah === "KELUAR" ? "bg-red-100 text-red-700" : "bg-muted text-muted-foreground"}`}>{m.arah}</span></td>
                   <td className="text-right tabular-nums">{Number(m.beratKg).toLocaleString("id-ID", { maximumFractionDigits: 2 })} kg</td>
                   <td className="text-xs">{m.namaWarga ?? "-"}</td>
-                  <td className="text-xs text-neutral-500">{m.sumber ?? "-"}</td>
-                  <td className="text-xs text-neutral-500">{m.keterangan ?? "-"}</td>
+                  <td className="text-xs text-muted-foreground">{m.sumber ?? "-"}</td>
+                  <td className="text-xs text-muted-foreground">{m.keterangan ?? "-"}</td>
                 </tr>
               ))}
-              {data?.mutasi.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-neutral-400">Belum ada mutasi.</td></tr>}
+              {data?.mutasi.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Belum ada mutasi.</td></tr>}
             </tbody>
           </table>
         )}

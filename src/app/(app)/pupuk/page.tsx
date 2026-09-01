@@ -39,8 +39,8 @@ export default function HalamanPupuk() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Pupuk &amp; Stok</h1>
-          <p className="text-sm text-neutral-500">Stok bertambah dari produksi pupuk organik, berkurang saat disalurkan ke petani.</p>
+          <h1 className="text-lg font-semibold text-foreground">Pupuk &amp; Stok</h1>
+          <p className="text-sm text-muted-foreground">Stok bertambah dari produksi pupuk organik, berkurang saat disalurkan ke petani.</p>
         </div>
         <div className="flex gap-2">
           <button className="btn" onClick={() => { setFormProduk((v) => !v); setFormStok(false); }}>+ Produk</button>
@@ -52,7 +52,7 @@ export default function HalamanPupuk() {
       {formStok && <FormPenyesuaian produk={produk} onSelesai={() => { setFormStok(false); muat(); }} />}
 
       <div className="card">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">Produk pupuk</h2>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Produk pupuk</h2>
         <table className="tbl">
           <thead><tr><th>Kode</th><th>Nama</th><th>Jenis</th><th className="text-right">Harga</th><th className="text-right">Stok</th><th>Status</th></tr></thead>
           <tbody>
@@ -60,20 +60,20 @@ export default function HalamanPupuk() {
               <tr key={p.id}>
                 <td className="font-mono text-xs">{p.kode}</td>
                 <td>{p.nama}</td>
-                <td className="text-xs text-neutral-500">{LABEL_JENIS[p.jenis] ?? p.jenis}</td>
+                <td className="text-xs text-muted-foreground">{LABEL_JENIS[p.jenis] ?? p.jenis}</td>
                 <td className="text-right tabular-nums">Rp {p.harga.toLocaleString("id-ID")}</td>
                 <td className="text-right tabular-nums font-medium">{Number(p.stok).toLocaleString("id-ID", { maximumFractionDigits: 2 })} {p.satuan.toLowerCase()}</td>
-                <td><span className={`pill ${p.aktif ? "bg-emerald-100 text-emerald-800" : "bg-neutral-200 text-neutral-600"}`}>{p.aktif ? "Aktif" : "Nonaktif"}</span></td>
+                <td><span className={`pill ${p.aktif ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"}`}>{p.aktif ? "Aktif" : "Nonaktif"}</span></td>
               </tr>
             ))}
-            {produk.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-neutral-400">Belum ada produk pupuk.</td></tr>}
+            {produk.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Belum ada produk pupuk.</td></tr>}
           </tbody>
         </table>
       </div>
 
       <div className="card">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">Buku besar mutasi stok</h2>
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Buku besar mutasi stok</h2>
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead><tr><th>Tanggal</th><th>Produk</th><th>Arah</th><th className="text-right">Jumlah</th><th>Sumber</th><th>Keterangan</th></tr></thead>
             <tbody>
@@ -82,14 +82,14 @@ export default function HalamanPupuk() {
                   <td className="text-xs">{new Date(m.tanggal).toLocaleDateString("id-ID")}</td>
                   <td>{m.produkPupuk.nama}</td>
                   <td>
-                    <span className={`pill ${m.arah === "MASUK" ? "bg-emerald-100 text-emerald-800" : m.arah === "KELUAR" ? "bg-red-100 text-red-700" : "bg-neutral-200 text-neutral-700"}`}>{m.arah}</span>
+                    <span className={`pill ${m.arah === "MASUK" ? "bg-emerald-100 text-emerald-800" : m.arah === "KELUAR" ? "bg-red-100 text-red-700" : "bg-muted text-muted-foreground"}`}>{m.arah}</span>
                   </td>
                   <td className="text-right tabular-nums">{Number(m.jumlah).toLocaleString("id-ID", { maximumFractionDigits: 2 })} {m.produkPupuk.satuan.toLowerCase()}</td>
-                  <td className="text-xs text-neutral-500">{m.sumber ?? "-"}</td>
-                  <td className="text-xs text-neutral-500">{m.keterangan ?? "-"}</td>
+                  <td className="text-xs text-muted-foreground">{m.sumber ?? "-"}</td>
+                  <td className="text-xs text-muted-foreground">{m.keterangan ?? "-"}</td>
                 </tr>
               ))}
-              {mutasi.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-neutral-400">Belum ada mutasi stok.</td></tr>}
+              {mutasi.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Belum ada mutasi stok.</td></tr>}
             </tbody>
           </table>
         )}

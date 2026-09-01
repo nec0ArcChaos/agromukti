@@ -45,8 +45,8 @@ export default function HalamanLahan() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Lahan</h1>
-          <p className="text-sm text-neutral-500">Luas boleh dicatat dalam m² atau hektare - rekap selalu dinormalkan ke hektare.</p>
+          <h1 className="text-lg font-semibold text-foreground">Lahan</h1>
+          <p className="text-sm text-muted-foreground">Luas boleh dicatat dalam m² atau hektare - rekap selalu dinormalkan ke hektare.</p>
         </div>
         <button className="btn" onClick={() => setFormTerbuka((v) => !v)}>{formTerbuka ? "Tutup formulir" : "+ Lahan baru"}</button>
       </div>
@@ -56,7 +56,7 @@ export default function HalamanLahan() {
       )}
 
       <div className="card">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">Rekap luas per komoditas</h2>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Rekap luas per komoditas</h2>
         <table className="tbl">
           <thead><tr><th>Komoditas</th><th className="text-right">Jumlah lahan</th><th className="text-right">Luas (ha)</th><th className="text-right">Usulan pupuk</th></tr></thead>
           <tbody>
@@ -68,14 +68,14 @@ export default function HalamanLahan() {
                 <td className="text-right tabular-nums">{Number(r.usulanPupukKg).toLocaleString("id-ID", { maximumFractionDigits: 2 })} kg</td>
               </tr>
             ))}
-            {rekap.length === 0 && <tr><td colSpan={4} className="py-6 text-center text-neutral-400">Belum ada lahan aktif.</td></tr>}
+            {rekap.length === 0 && <tr><td colSpan={4} className="py-6 text-center text-muted-foreground">Belum ada lahan aktif.</td></tr>}
           </tbody>
         </table>
       </div>
 
       <div className="card">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">Daftar lahan</h2>
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Daftar lahan</h2>
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead>
               <tr><th>Petani</th><th>Komoditas</th><th className="text-right">Luas</th><th className="text-right">Setara (ha)</th><th className="text-right">Usulan pupuk</th><th>Lokasi</th><th>Status</th></tr>
@@ -83,16 +83,16 @@ export default function HalamanLahan() {
             <tbody>
               {rows.map((l) => (
                 <tr key={l.id}>
-                  <td>{l.petani.warga.nama}<br /><span className="font-mono text-xs text-neutral-400">{l.petani.kode}</span></td>
+                  <td>{l.petani.warga.nama}<br /><span className="font-mono text-xs text-muted-foreground">{l.petani.kode}</span></td>
                   <td>{l.komoditas.nama}</td>
                   <td className="text-right tabular-nums">{Number(l.luas).toLocaleString("id-ID")} {l.satuan === "HA" ? "ha" : "m²"}</td>
                   <td className="text-right tabular-nums">{Number(l.luasHektare).toLocaleString("id-ID", { maximumFractionDigits: 4 })}</td>
                   <td className="text-right tabular-nums">{Number(l.usulanPupukKg).toLocaleString("id-ID", { maximumFractionDigits: 2 })} kg</td>
-                  <td className="text-xs text-neutral-500">{l.lokasi ?? "-"}</td>
-                  <td><span className={`pill ${l.status === "AKTIF" ? "bg-emerald-100 text-emerald-800" : "bg-neutral-200 text-neutral-600"}`}>{l.status}</span></td>
+                  <td className="text-xs text-muted-foreground">{l.lokasi ?? "-"}</td>
+                  <td><span className={`pill ${l.status === "AKTIF" ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"}`}>{l.status}</span></td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-neutral-400">Belum ada lahan.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Belum ada lahan.</td></tr>}
             </tbody>
           </table>
         )}
@@ -161,7 +161,7 @@ function FormLahan({
       </div>
 
       {hektare > 0 && (
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-muted-foreground">
           Setara <span className="font-medium">{hektare.toLocaleString("id-ID", { maximumFractionDigits: 4 })} ha</span>
           {komoditas && <> · usulan kebutuhan pupuk <span className="font-medium">{usulan.toLocaleString("id-ID", { maximumFractionDigits: 2 })} kg</span></>}
         </p>

@@ -82,7 +82,7 @@ export default function HalamanPenarikan() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold text-neutral-900">Penarikan Saldo</h1>
+      <h1 className="text-lg font-semibold text-foreground">Penarikan Saldo</h1>
 
       <form onSubmit={submit} className="card space-y-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -99,7 +99,7 @@ export default function HalamanPenarikan() {
             <label className="label">Jumlah penarikan (Rp)</label>
             <input type="number" min="1" className="field" value={jumlah} onChange={(e) => setJumlah(e.target.value)} required />
             {nasabahTerpilih && (
-              <p className="mt-1 text-xs text-neutral-500">Saldo tersedia: Rp {nasabahTerpilih.saldo.toLocaleString("id-ID")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Saldo tersedia: Rp {nasabahTerpilih.saldo.toLocaleString("id-ID")}</p>
             )}
           </div>
         </div>
@@ -108,9 +108,9 @@ export default function HalamanPenarikan() {
       </form>
 
       <div className="card">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">Daftar penarikan</h2>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Daftar penarikan</h2>
         {memuat ? (
-          <p className="text-sm text-neutral-500">Memuat...</p>
+          <p className="text-sm text-muted-foreground">Memuat...</p>
         ) : (
           <table className="tbl">
             <thead>
@@ -122,7 +122,7 @@ export default function HalamanPenarikan() {
                   <td className="font-mono text-xs">{p.nomor}</td>
                   <td>{p.nasabah.warga.nama}</td>
                   <td className="text-right tabular-nums">Rp {p.jumlah.toLocaleString("id-ID")}</td>
-                  <td className="text-xs text-neutral-500">{p.metode}</td>
+                  <td className="text-xs text-muted-foreground">{p.metode}</td>
                   <td>
                     <span className={`pill ${
                       p.status === "DISETUJUI" ? "bg-emerald-100 text-emerald-800" :
@@ -134,18 +134,18 @@ export default function HalamanPenarikan() {
                   <td className="space-x-2">
                     {p.status === "PENDING" && sesi?.role === "ADMIN" && (
                       <>
-                        <button onClick={() => setujui(p.id)} className="text-xs text-emerald-700 hover:underline">Setujui</button>
+                        <button onClick={() => setujui(p.id)} className="text-xs text-primary hover:underline">Setujui</button>
                         <button onClick={() => tolak(p.id)} className="text-xs text-red-600 hover:underline">Tolak</button>
                       </>
                     )}
                     {p.status === "PENDING" && sesi?.role !== "ADMIN" && (
-                      <span className="text-xs text-neutral-400">Menunggu admin</span>
+                      <span className="text-xs text-muted-foreground">Menunggu admin</span>
                     )}
                   </td>
                 </tr>
               ))}
               {rows.length === 0 && (
-                <tr><td colSpan={6} className="py-6 text-center text-neutral-400">Belum ada penarikan.</td></tr>
+                <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Belum ada penarikan.</td></tr>
               )}
             </tbody>
           </table>

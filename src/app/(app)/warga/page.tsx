@@ -41,8 +41,8 @@ export default function HalamanWarga() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Data Warga</h1>
-          <p className="text-sm text-neutral-500">Identitas tunggal warga desa. Satu orang bisa punya peran di beberapa pilar sekaligus.</p>
+          <h1 className="text-lg font-semibold text-foreground">Data Warga</h1>
+          <p className="text-sm text-muted-foreground">Identitas tunggal warga desa. Satu orang bisa punya peran di beberapa pilar sekaligus.</p>
         </div>
         <button className="btn" onClick={() => setFormTerbuka((v) => !v)}>{formTerbuka ? "Tutup formulir" : "+ Warga baru"}</button>
       </div>
@@ -51,14 +51,14 @@ export default function HalamanWarga() {
 
       {ganda.length > 0 && (
         <div className="card border-amber-300 bg-amber-50">
-          <p className="text-sm font-medium text-neutral-900">
+          <p className="text-sm font-medium text-foreground">
             {ganda.length} kemungkinan data warga ganda terdeteksi
           </p>
-          <p className="mb-2 text-xs text-neutral-600">
+          <p className="mb-2 text-xs text-muted-foreground">
             Nama dan dusun yang sama biasanya berarti satu orang terdaftar dua kali - misalnya sekali lewat bank
             sampah, sekali lewat pertanian. Master data warga hanya bermanfaat kalau benar-benar tunggal.
           </p>
-          <ul className="text-xs text-neutral-700">
+          <ul className="text-xs text-foreground">
             {ganda.map((g, i) => (
               <li key={i}>· {g[0].nama} {g[0].dusun ? `(${g[0].dusun})` : ""} — {g.length} baris</li>
             ))}
@@ -68,7 +68,7 @@ export default function HalamanWarga() {
 
       <div className="card">
         <input className="field mb-3 max-w-xs" placeholder="Cari nama atau no. HP..." value={q} onChange={(e) => setQ(e.target.value)} />
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead><tr><th>Nama</th><th>Dusun</th><th>RT/RW</th><th>No. HP</th><th>Peran</th></tr></thead>
             <tbody>
@@ -76,7 +76,7 @@ export default function HalamanWarga() {
                 <tr key={w.id}>
                   <td>{w.nama}</td>
                   <td>{w.dusun ?? "-"}</td>
-                  <td className="text-xs text-neutral-500">{w.rt || w.rw ? `${w.rt ?? "-"}/${w.rw ?? "-"}` : "-"}</td>
+                  <td className="text-xs text-muted-foreground">{w.rt || w.rw ? `${w.rt ?? "-"}/${w.rw ?? "-"}` : "-"}</td>
                   <td>{w.noHp ?? "-"}</td>
                   <td className="space-x-1">
                     {w.nasabah.map((n) => (
@@ -86,12 +86,12 @@ export default function HalamanWarga() {
                       <span key={p.id} className="pill bg-sky-100 text-sky-800">Petani {p.kode}</span>
                     ))}
                     {w.nasabah.length === 0 && w.petani.length === 0 && (
-                      <span className="text-xs text-neutral-400">Belum punya peran</span>
+                      <span className="text-xs text-muted-foreground">Belum punya peran</span>
                     )}
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-neutral-400">Belum ada data warga.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-muted-foreground">Belum ada data warga.</td></tr>}
             </tbody>
           </table>
         )}

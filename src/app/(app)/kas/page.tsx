@@ -25,8 +25,8 @@ export default function HalamanKas() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Kas Lembaga</h1>
-          <p className="text-sm text-neutral-500">Saldo saat ini: <span className="font-semibold text-neutral-900">Rp {saldoSaatIni.toLocaleString("id-ID")}</span></p>
+          <h1 className="text-lg font-semibold text-foreground">Kas Lembaga</h1>
+          <p className="text-sm text-muted-foreground">Saldo saat ini: <span className="font-semibold text-foreground">Rp {saldoSaatIni.toLocaleString("id-ID")}</span></p>
         </div>
         <button className="btn" onClick={() => setFormTerbuka((v) => !v)}>{formTerbuka ? "Tutup formulir" : "+ Entri manual"}</button>
       </div>
@@ -34,22 +34,22 @@ export default function HalamanKas() {
       {formTerbuka && <FormKas onSelesai={() => { setFormTerbuka(false); muat(); }} />}
 
       <div className="card">
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead><tr><th>Tanggal</th><th>Kategori</th><th>Keterangan</th><th className="text-right">Jumlah</th><th className="text-right">Saldo</th></tr></thead>
             <tbody>
               {rows.map((k) => (
                 <tr key={k.id}>
                   <td className="text-xs">{new Date(k.tanggal).toLocaleDateString("id-ID")}</td>
-                  <td><span className="pill bg-neutral-100 text-neutral-700">{k.kategori}</span></td>
-                  <td className="text-xs text-neutral-500">{k.keterangan ?? "-"}</td>
+                  <td><span className="pill bg-muted text-muted-foreground">{k.kategori}</span></td>
+                  <td className="text-xs text-muted-foreground">{k.keterangan ?? "-"}</td>
                   <td className={`text-right tabular-nums ${k.arah === "MASUK" ? "text-emerald-700" : "text-red-600"}`}>
                     {k.arah === "MASUK" ? "+" : "-"}Rp {k.jumlah.toLocaleString("id-ID")}
                   </td>
                   <td className="text-right tabular-nums font-medium">Rp {k.saldoSesudah.toLocaleString("id-ID")}</td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-neutral-400">Belum ada mutasi kas. Catat modal awal lembaga terlebih dahulu.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-muted-foreground">Belum ada mutasi kas. Catat modal awal lembaga terlebih dahulu.</td></tr>}
             </tbody>
           </table>
         )}

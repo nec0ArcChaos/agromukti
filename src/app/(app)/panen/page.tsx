@@ -47,8 +47,8 @@ export default function HalamanPanen() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Panen</h1>
-          <p className="text-sm text-neutral-500">Boleh dicatat dalam kg, kuintal, atau ton - rekap selalu dinormalkan ke kilogram.</p>
+          <h1 className="text-lg font-semibold text-foreground">Panen</h1>
+          <p className="text-sm text-muted-foreground">Boleh dicatat dalam kg, kuintal, atau ton - rekap selalu dinormalkan ke kilogram.</p>
         </div>
         <button className="btn" onClick={() => setFormTerbuka((v) => !v)}>{formTerbuka ? "Tutup formulir" : "+ Catat panen"}</button>
       </div>
@@ -59,7 +59,7 @@ export default function HalamanPanen() {
 
       <div className="card">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-900">Rekap panen</h2>
+          <h2 className="text-sm font-semibold text-foreground">Rekap panen</h2>
           <select className="field max-w-[180px]" value={groupBy} onChange={(e) => setGroupBy(e.target.value)}>
             <option value="komoditas">Per komoditas</option>
             <option value="dusun">Per dusun</option>
@@ -76,7 +76,7 @@ export default function HalamanPanen() {
                 <td className="text-right tabular-nums">{Number(r.jumlahKg).toLocaleString("id-ID", { maximumFractionDigits: 2 })} kg</td>
               </tr>
             ))}
-            {rekap?.rows.length === 0 && <tr><td colSpan={3} className="py-6 text-center text-neutral-400">Belum ada data panen.</td></tr>}
+            {rekap?.rows.length === 0 && <tr><td colSpan={3} className="py-6 text-center text-muted-foreground">Belum ada data panen.</td></tr>}
           </tbody>
           {rekap && rekap.rows.length > 0 && (
             <tfoot><tr className="font-semibold"><td>Total</td><td></td><td className="text-right tabular-nums">{Number(rekap.totalKg).toLocaleString("id-ID", { maximumFractionDigits: 2 })} kg</td></tr></tfoot>
@@ -85,8 +85,8 @@ export default function HalamanPanen() {
       </div>
 
       <div className="card">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">Catatan panen terbaru</h2>
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Catatan panen terbaru</h2>
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead>
               <tr><th>Tanggal</th><th>Petani</th><th>Komoditas</th><th className="text-right">Jumlah</th><th className="text-right">Setara (kg)</th><th>Keterangan</th></tr>
@@ -95,14 +95,14 @@ export default function HalamanPanen() {
               {rows.map((p) => (
                 <tr key={p.id}>
                   <td className="text-xs">{new Date(p.tanggalPanen).toLocaleDateString("id-ID")}</td>
-                  <td>{p.petani.warga.nama}<br /><span className="font-mono text-xs text-neutral-400">{p.petani.kode}</span></td>
+                  <td>{p.petani.warga.nama}<br /><span className="font-mono text-xs text-muted-foreground">{p.petani.kode}</span></td>
                   <td>{p.komoditas.nama}</td>
                   <td className="text-right tabular-nums">{Number(p.jumlahPanen).toLocaleString("id-ID")} {LABEL_SATUAN[p.satuan] ?? p.satuan}</td>
                   <td className="text-right tabular-nums">{Number(p.jumlahKg).toLocaleString("id-ID", { maximumFractionDigits: 2 })}</td>
-                  <td className="text-xs text-neutral-500">{p.keterangan ?? "-"}</td>
+                  <td className="text-xs text-muted-foreground">{p.keterangan ?? "-"}</td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-neutral-400">Belum ada catatan panen.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Belum ada catatan panen.</td></tr>}
             </tbody>
           </table>
         )}
@@ -175,7 +175,7 @@ function FormPanen({
       </div>
 
       {kg > 0 && satuan !== "KG" && (
-        <p className="text-sm text-neutral-600">Setara <span className="font-medium">{kg.toLocaleString("id-ID")} kg</span></p>
+        <p className="text-sm text-muted-foreground">Setara <span className="font-medium">{kg.toLocaleString("id-ID")} kg</span></p>
       )}
 
       {galat && <p className="text-sm text-red-600">{galat}</p>}

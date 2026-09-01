@@ -23,8 +23,8 @@ export default function HalamanKategoriSampah() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Kategori Sampah</h1>
-          <p className="text-sm text-neutral-500">Label ringan untuk laporan komposisi. Tidak ada harga di sini - harga ditentukan pengepul saat datang.</p>
+          <h1 className="text-lg font-semibold text-foreground">Kategori Sampah</h1>
+          <p className="text-sm text-muted-foreground">Label ringan untuk laporan komposisi. Tidak ada harga di sini - harga ditentukan pengepul saat datang.</p>
         </div>
         <button className="btn" onClick={() => setFormTerbuka((v) => !v)}>{formTerbuka ? "Tutup formulir" : "+ Kategori baru"}</button>
       </div>
@@ -32,7 +32,7 @@ export default function HalamanKategoriSampah() {
       {formTerbuka && <FormKategori onSelesai={() => { setFormTerbuka(false); muat(); }} />}
 
       <div className="card">
-        {memuat ? <p className="text-sm text-neutral-500">Memuat...</p> : (
+        {memuat ? <p className="text-sm text-muted-foreground">Memuat...</p> : (
           <table className="tbl">
             <thead><tr><th>Kode</th><th>Nama</th><th>Status</th></tr></thead>
             <tbody>
@@ -40,10 +40,10 @@ export default function HalamanKategoriSampah() {
                 <tr key={k.id}>
                   <td className="font-mono text-xs">{k.kode}</td>
                   <td>{k.nama}</td>
-                  <td><span className={`pill ${k.aktif ? "bg-emerald-100 text-emerald-800" : "bg-neutral-200 text-neutral-600"}`}>{k.aktif ? "Aktif" : "Nonaktif"}</span></td>
+                  <td><span className={`pill ${k.aktif ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"}`}>{k.aktif ? "Aktif" : "Nonaktif"}</span></td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={3} className="py-6 text-center text-neutral-400">Belum ada kategori.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={3} className="py-6 text-center text-muted-foreground">Belum ada kategori.</td></tr>}
             </tbody>
           </table>
         )}
