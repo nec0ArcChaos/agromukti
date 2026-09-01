@@ -454,6 +454,8 @@ model ProdukPupuk {
   updatedAt DateTime @updatedAt
 
   mutasiStok       MutasiStokPupuk[]
+  produksiPadat    ProduksiPupuk[]         @relation("ProduksiPadat")
+  produksiCair     ProduksiPupuk[]         @relation("ProduksiCair")
   permintaanDetail PermintaanPupukDetail[]
   distribusiDetail DistribusiPupukDetail[]
 
@@ -607,25 +609,35 @@ model MutasiSampahOrganik {
 
 /// Satu siklus produksi pupuk dari sampah organik.
 model ProduksiPupuk {
-  id                  String    @id @default(cuid())
+  id                 String    @id @default(cuid())
   /// Format PRD-202609-0001.
-  kode                String    @unique
-  tanggalMulai        DateTime
-  estimasiSelesai     DateTime?
-  tanggalSelesai      DateTime?
-  beratSampahOrganik  Decimal   @db.Decimal(12, 2)
-  estimasiPupukCair   Decimal   @default(0) @db.Decimal(12, 2)
-  estimasiPupukKasar  Decimal   @default(0) @db.Decimal(12, 2)
-  pupukCairAktual     Decimal?  @db.Decimal(12, 2)
-  pupukKasarAktual    Decimal?  @db.Decimal(12, 2)
-  /// DIHITUNG SISTEM saat panen, tidak pernah diinput.
-  rendemenPersen      Decimal?  @db.Decimal(5, 2)
-  /// PROSES | SELESAI | GAGAL
-  status              String    @default("PROSES")
-  keterangan          String?   @db.Text
-  operatorId          String?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  kode               String    @unique
+  tanggalMulai       DateTime
+  estimasiSelesai    DateTime?
+  tanggalSelesai     DateTime?
+  beratSampahOrganik Decimal   @db.Decimal(12, 2)
+  estimasiPupukCair  Decimal   @default(0) @db.Decimal(12, 2)
+  estimasiPupukKasar Decimal   @default(0) @db.Decimal(12, 2)
+  pupukCairAktual    Decimal?  @db.Decimal(12, 2)
+  pupukKasarAktual   Decimal?  @db.Decimal(12, 2)
+  /// Rendemen PADAT saja: pupukKasarAktual (kg) / beratSampahOrganik (kg).
+  /// Output cair bersatuan liter dan TIDAK boleh dijumlahkan ke sini -
+  /// hasil cair per kg bahan dihitung terpisah saat dibutuhkan.
+  rendemenPersen     Decimal?  @db.Decimal(5, 2)
+  /// PROSES | SELESAI | GAGAL | DIBATALKAN
+  status             String    @default("PROSES")
+  /// Produk tujuan hasil panen - inilah sambungan ke stok pupuk pilar
+  /// pertanian. Ditetapkan saat batch dibuat supaya operator tahu sejak
+  /// awal hasilnya akan masuk ke mana.
+  produkPadatId      String?
+  produkCairId       String?
+  keterangan         String?   @db.Text
+  operatorId         String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  produkPadat ProdukPupuk? @relation("ProduksiPadat", fields: [produkPadatId], references: [id])
+  produkCair  ProdukPupuk? @relation("ProduksiCair", fields: [produkCairId], references: [id])
 
   @@index([status])
   @@index([tanggalMulai])

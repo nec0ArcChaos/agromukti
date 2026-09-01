@@ -40,6 +40,14 @@ const KELOMPOK_TAUT = [
       { href: "/distribusi", label: "Distribusi" },
     ],
   },
+  {
+    label: "Organik & UMKM",
+    taut: [
+      { href: "/organik", label: "Sampah Organik" },
+      { href: "/produksi", label: "Produksi Pupuk" },
+      { href: "/umkm", label: "Produk UMKM" },
+    ],
+  },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
