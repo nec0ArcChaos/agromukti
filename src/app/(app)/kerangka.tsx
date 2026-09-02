@@ -44,7 +44,7 @@ export default function Kerangka({
 
   async function keluar() {
     await api.post("/api/auth/logout");
-    router.push("/login");
+    router.push("/petugas");
     router.refresh();
   }
 

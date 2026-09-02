@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Prisma } from "@prisma/client";
 import {
-  ArrowRight, Cloud, Droplets, Leaf, LogIn, Recycle, Search, Sprout, Tractor, Wind,
+  ArrowRight, Cloud, Droplets, Leaf, Recycle, Search, Sprout, Tractor, Wind,
 } from "lucide-react";
 import { statistikPublik, cuacaArgamukti } from "@/server/modules/publik/publik.service";
 import KalkulatorPupuk from "./kalkulator-pupuk";
@@ -25,6 +25,19 @@ export default async function Beranda() {
   return (
     <div className="min-h-screen bg-background">
       {/* ---------- Kepala ---------- */}
+      {/*
+        Header sengaja tanpa tombol apa pun.
+
+        Pintu petugas (/petugas) tidak ditautkan dari situs publik supaya
+        halaman ini terbaca sebagai situs layanan warga, bukan gerbang
+        aplikasi kantor. CATATAN: ini pilihan tampilan, BUKAN pengamanan -
+        alamatnya tetap bisa diketik siapa pun, dan yang benar-benar
+        menjaga adalah autentikasi di baliknya.
+
+        Tombol "Portal Warga" juga dibuang: tombol "Ajukan Pupuk" di hero
+        sudah menuju ke sana, dan dua tombol ke tujuan yang sama hanya
+        membuat pengunjung ragu harus menekan yang mana.
+      */}
       <header className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
           <div>
@@ -33,12 +46,9 @@ export default async function Beranda() {
             </p>
             <p className="text-[11px] text-muted-foreground">Desa Argamukti, Argapura, Majalengka</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link href="/portal" className="btn-secondary text-sm">Portal Warga</Link>
-            <Link href="/login" className="btn text-sm">
-              <LogIn className="size-4" /> Masuk
-            </Link>
-          </div>
+          <p className="hidden text-xs text-muted-foreground sm:block">
+            Sistem Informasi Terpadu Desa
+          </p>
         </div>
       </header>
 

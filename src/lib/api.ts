@@ -34,7 +34,7 @@ function lempar(error: { code: string; message: string; fields?: Record<string, 
     // dibuang dan server component wajib mengevaluasi ulang sesinya dari nol.
     // Modul ini juga bukan komponen React, sehingga tidak bisa memakai hook.
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-    window.location.href = "/login";
+    window.location.href = "/petugas";
   }
   throw new ApiError(error.code, error.message, error.fields);
 }
