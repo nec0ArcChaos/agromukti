@@ -10,7 +10,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force",
-    "docs:manual": "node docs/buat-manual.mjs"
+    "docs:manual": "node docs/buat-manual.mjs",
+    "docs:rumus": "node docs/buat-rumus-produksi.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -36,6 +37,7 @@
     "docx": "^9.7.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
+    "pdfkit": "^0.20.2",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "tsx": "^4.23.13",

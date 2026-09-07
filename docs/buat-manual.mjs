@@ -12,6 +12,16 @@ import {
   Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType,
 } from "docx";
 
+/**
+ * Alamat situs AgroMukti setelah dipasang di hosting.
+ *
+ * GANTI SATU BARIS INI dengan alamat sebenarnya saat domain desa sudah
+ * aktif, lalu jalankan ulang `npm run docs:manual`. Seluruh alamat di
+ * dalam buku panduan ikut menyesuaikan sendiri, sehingga tidak ada alamat
+ * lama yang tertinggal di satu-dua halaman tanpa disadari.
+ */
+const ALAMAT_SITUS = "https://agromukti.argamukti.desa.id";
+
 const TEAL = "0F766E";
 const ABU = "64748B";
 const ABU_MUDA = "F1F5F9";
@@ -196,36 +206,41 @@ const bab1 = [
 ];
 
 const bab2 = [
-  judulBab("2. Menjalankan Sistem"),
-  p("Aplikasi ini berjalan di komputer kantor desa. Ia tidak memerlukan internet untuk bekerja — internet hanya dibutuhkan oleh tampilan cuaca di halaman depan, dan bila tidak ada, tampilan itu akan hilang sendiri tanpa mengganggu apa pun."),
-  subJudul("Menyalakan sistem"),
-  langkah("Buka XAMPP Control Panel, lalu tekan Start pada MySQL. Apache tidak perlu dinyalakan."),
-  langkah("Buka Command Prompt, lalu ketik: cd c:\\xampp\\htdocs\\bankSampah"),
-  langkah("Ketik: npm run start"),
-  langkah("Tunggu sampai muncul tulisan Ready. Biarkan jendela itu terbuka selama sistem dipakai — menutupnya akan mematikan aplikasi."),
+  judulBab("2. Mengakses Sistem"),
+  p("AgroMukti adalah aplikasi web. Tidak ada yang perlu dipasang di komputer maupun telepon, dan tidak ada program yang perlu dinyalakan lebih dulu. Cukup buka peramban — Chrome, Edge, Firefox, atau Safari — lalu ketik alamatnya."),
   jarak(120),
-  subJudul("Membuka aplikasi"),
+  subJudul("Alamat situs"),
   tabel(
-    ["Dari mana", "Alamat yang diketik"],
+    ["Halaman", "Alamat", "Siapa yang boleh membuka"],
     [
-      ["Komputer kantor desa itu sendiri", "http://localhost:3000"],
-      ["Telepon atau komputer lain di Wi-Fi yang sama", "http://[alamat IP komputer]:3000"],
+      ["Halaman warga", ALAMAT_SITUS, "Siapa saja, tanpa akun"],
+      ["Pengajuan pupuk", `${ALAMAT_SITUS}/portal`, "Siapa saja, tanpa akun"],
+      ["Area petugas", `${ALAMAT_SITUS}/petugas`, "Hanya yang punya akun"],
     ],
   ),
   jarak(120),
-  p("Alamat IP komputer ditampilkan di jendela Command Prompt saat sistem dinyalakan, pada baris bertuliskan Network. Alamat itu bisa berubah bila komputer dinyalakan ulang atau berpindah jaringan."),
+  p("Sistem dapat dibuka dari mana saja selama ada sambungan internet: komputer kantor desa, telepon pengurus di lapangan, maupun perangkat kepala desa di rumah. Beberapa petugas boleh memakainya bersamaan, dan data yang mereka masukkan langsung terlihat oleh yang lain."),
   jarak(),
-  kotak("Bila sistem dimatikan", [
-    "Data tidak hilang. Semua tersimpan di basis data komputer, bukan di jendela aplikasi.",
-    "Untuk menyalakan kembali, ulangi langkah di atas.",
+  kotak("Data tersimpan di server, bukan di perangkat Anda", [
+    "Menutup peramban, mematikan telepon, atau berganti perangkat tidak menghilangkan data apa pun.",
+    "Karena itu pula, kehilangan atau kerusakan komputer kantor tidak menghilangkan catatan desa.",
+    "Meski begitu, pencadangan berkala tetap perlu dilakukan — lihat Bab 9.",
   ]),
+  jarak(),
+  subJudul("Menyimpan alamat agar mudah dibuka"),
+  p("Agar petugas tidak perlu mengetik alamat setiap kali, simpanlah sebagai penanda buku (bookmark) di peramban komputer kantor. Pada telepon, alamat area petugas dapat ditambahkan ke layar utama sehingga terbuka seperti aplikasi biasa."),
+  jarak(120),
+  subJudul("Yang dibutuhkan"),
+  butir("Sambungan internet. Bila sambungan terputus, halaman tidak dapat dibuka sampai sambungan pulih."),
+  butir("Peramban modern. Peramban bawaan Windows lama (Internet Explorer) tidak didukung."),
+  butir("Akun, khusus untuk membuka area petugas. Halaman warga tidak memerlukannya."),
   new Paragraph({ pageBreakBefore: true, children: [] }),
 ];
 
 const bab3 = [
   judulBab("3. Akun dan Hak Akses"),
   p("Sistem ini punya dua wajah. Halaman depan terbuka untuk siapa saja tanpa akun. Sedangkan area petugas hanya bisa dimasuki dengan akun, dan alamatnya sengaja tidak ditautkan dari halaman depan."),
-  pKaya(["Alamat area petugas: ", true], "http://localhost:3000/petugas"),
+  pKaya(["Alamat area petugas: ", true], `${ALAMAT_SITUS}/petugas`),
   jarak(120),
   subJudul("Peran dan yang boleh dikerjakan"),
   p("Setiap akun punya peran. Peran menentukan menu mana yang boleh diubah datanya. Semua peran boleh membaca seluruh modul — pembatasan hanya berlaku untuk menambah dan mengubah data."),
@@ -435,13 +450,16 @@ const bab9 = [
   jarak(120),
   subJudul("9.3 Mencadangkan data"),
   jarak(80),
+  p("Data desa tersimpan di server hosting, sehingga aman dari kerusakan komputer kantor. Namun pencadangan tetap perlu: layanan hosting bisa bermasalah, masa berlangganannya bisa habis, dan kekeliruan besar pada data bisa saja terjadi. Cadangan adalah salinan yang sepenuhnya dipegang desa sendiri."),
+  jarak(80),
   kotak("Lakukan pencadangan secara rutin", [
-    "Sekurang-kurangnya sekali seminggu, dan selalu sebelum komputer diservis atau dipindahkan.",
-    "Simpan salinannya di flash disk, jangan hanya di komputer yang sama.",
+    "Sekurang-kurangnya sekali sebulan, dan selalu sebelum perubahan besar seperti pergantian pengurus atau penataan ulang data.",
+    "Simpan salinannya di komputer desa dan di flash disk. Jangan menyimpannya hanya di satu tempat.",
+    "Berkas cadangan menjadi jaminan bahwa data desa tetap milik desa, tidak bergantung pada penyedia hosting.",
   ]),
   jarak(120),
   langkah("Masuk dengan akun Administrator."),
-  langkah("Buka alamat: http://localhost:3000/api/backup"),
+  langkah(`Buka alamat: ${ALAMAT_SITUS}/api/backup`),
   langkah("Berkas cadangan akan terunduh. Simpan dengan nama yang memuat tanggalnya."),
   jarak(120),
   p("Berkas cadangan tidak memuat kata sandi siapa pun, sehingga aman disimpan dan diserahkan untuk keperluan pemulihan data."),
@@ -467,9 +485,19 @@ const bab10 = [
   ),
   jarak(),
   subJudul("Bila halaman tidak bisa dibuka"),
-  butir("Pastikan MySQL menyala di XAMPP Control Panel."),
-  butir("Pastikan jendela Command Prompt yang menjalankan sistem masih terbuka."),
-  butir("Bila membuka dari telepon, pastikan telepon tersambung ke Wi-Fi yang sama dan alamat IP-nya belum berubah."),
+  p("Periksa berurutan dari yang paling sering menjadi penyebabnya:"),
+  langkah("Pastikan perangkat tersambung internet. Coba buka satu situs lain untuk memastikan."),
+  langkah("Periksa ejaan alamatnya. Salah satu huruf saja membuat halaman tidak ditemukan."),
+  langkah("Muat ulang halaman, atau tutup peramban lalu buka kembali."),
+  langkah("Coba dari perangkat lain. Bila di perangkat lain terbuka, masalahnya ada pada perangkat pertama, bukan pada sistem."),
+  langkah("Bila semua perangkat gagal membuka, kemungkinan layanan hosting sedang bermasalah. Hubungi penanggung jawab sistem desa."),
+  jarak(120),
+  subJudul("Menjaga keamanan saat membuka dari perangkat bersama"),
+  p("Karena sistem kini dapat dibuka dari mana saja, kebiasaan berikut menjadi penting:"),
+  butir("Selalu tekan tombol keluar setelah selesai, terutama pada komputer yang dipakai bergantian."),
+  butir("Jangan menyimpan kata sandi pada peramban di perangkat yang dipakai bersama."),
+  butir("Jangan membuka area petugas di komputer warnet atau perangkat milik orang lain."),
+  butir("Bila kata sandi diduga diketahui orang lain, segera minta Administrator menggantinya."),
   new Paragraph({ pageBreakBefore: true, children: [] }),
 ];
 
@@ -495,7 +523,7 @@ const bab11 = [
 
 const penutup = [
   judulBab("Serah Terima"),
-  p("Buku panduan ini diserahkan bersama aplikasi AgroMukti dan basis datanya kepada Pemerintah Desa Argamukti."),
+  p("Buku panduan ini diserahkan bersama aplikasi AgroMukti yang sudah terpasang dan dapat diakses secara daring, beserta data desa di dalamnya, kepada Pemerintah Desa Argamukti."),
   jarak(120),
   subJudul("Akun awal"),
   p("Kata sandi sengaja tidak dicetak dalam buku ini. Buku panduan biasanya digandakan dan tersimpan di meja terbuka, sehingga kata sandi yang tercetak akan tersebar tanpa disadari. Isilah kolom di bawah dengan tulisan tangan pada saat serah terima, lalu segera ganti kata sandinya setelah masuk pertama kali."),
@@ -512,9 +540,15 @@ const penutup = [
   ),
   jarak(120),
   kotak("Yang diserahkan bersama buku ini", [
-    "Aplikasi AgroMukti beserta kode sumbernya.",
-    "Basis data berisi data awal desa.",
+    "Aplikasi AgroMukti yang sudah terpasang dan dapat diakses di alamatnya.",
+    "Kode sumber aplikasi, agar desa dapat memindahkannya ke penyedia lain bila diperlukan.",
+    "Keterangan akses hosting dan nama domain, beserta masa berlakunya.",
     "Satu berkas cadangan data terbaru.",
+  ]),
+  jarak(120),
+  kotak("Yang perlu dijaga desa agar sistem tetap hidup", [
+    "Nama domain dan layanan hosting punya masa berlaku. Catat tanggal jatuh temponya dan perpanjang sebelum habis - bila terlewat, situs berhenti dapat diakses.",
+    "Tetapkan satu penanggung jawab yang memegang keterangan akses hosting, dan satu pengganti bila yang bersangkutan berhalangan.",
   ]),
   jarak(500),
   new Table({
@@ -601,6 +635,21 @@ const dok = new Document({
 
 const keluaran = path.join(process.cwd(), "docs", "Buku Panduan AgroMukti.docx");
 const buf = await Packer.toBuffer(dok);
-fs.writeFileSync(keluaran, buf);
+
+try {
+  fs.writeFileSync(keluaran, buf);
+} catch (e) {
+  // Penyebab paling sering: dokumennya sedang dibuka di Word, yang mengunci
+  // berkasnya. Jejak galat mentah dari Node tidak menjelaskan itu sama
+  // sekali, jadi terjemahkan menjadi instruksi yang bisa langsung dikerjakan.
+  if (e?.code === "EBUSY" || e?.code === "EPERM") {
+    console.error("Gagal menyimpan: berkas panduan sedang dibuka aplikasi lain.");
+    console.error("Tutup 'Buku Panduan AgroMukti.docx' di Microsoft Word, lalu jalankan ulang perintah ini.");
+    process.exit(1);
+  }
+  throw e;
+}
+
 console.log(`Tersimpan: ${keluaran}`);
 console.log(`Ukuran   : ${(buf.length / 1024).toFixed(1)} KB`);
+console.log(`Alamat situs yang tercetak: ${ALAMAT_SITUS}`);
