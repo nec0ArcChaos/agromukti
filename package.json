@@ -14,7 +14,8 @@
     "docs:rumus": "node docs/buat-rumus-produksi.mjs",
     "db:contoh": "tsx prisma/isi-data-contoh.ts",
     "docs:tangkapan": "node docs/ambil-tangkapan-layar.mjs",
-    "docs:laporan": "node docs/buat-laporan-data.mjs"
+    "docs:laporan": "node docs/buat-laporan-data.mjs",
+    "docs:berita": "node docs/buat-berita-acara.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
