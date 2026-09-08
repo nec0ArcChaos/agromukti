@@ -137,6 +137,23 @@
     @apply mb-1 block text-sm font-medium text-foreground;
   }
 
+  /*
+   * Tabel yang lebih lebar dari layar digulir DI DALAM kartunya sendiri,
+   * bukan melebarkan seluruh halaman.
+   *
+   * Sebelum ini, di layar ponsel tabel dengan banyak kolom (Produksi,
+   * Permintaan, Distribusi) mendorong <body> jadi lebih lebar dari
+   * jendela: header yang sticky hanya selebar layar sementara isinya
+   * meluber ke kanan, dan sebagian kolom tidak bisa dijangkau sama
+   * sekali. Ditangani di satu tempat lewat :has() supaya ke-18 halaman
+   * yang memakai kelas .tbl ikut benar tanpa perlu dibungkus satu per
+   * satu - kartu yang tidak berisi tabel tidak terpengaruh karena tidak
+   * punya isi yang meluber.
+   */
+  .card:has(table.tbl) {
+    @apply overflow-x-auto;
+  }
+
   table.tbl {
     @apply w-full border-collapse text-sm;
   }

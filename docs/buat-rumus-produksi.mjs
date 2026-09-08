@@ -470,13 +470,21 @@ const rentang = dok.bufferedPageRange();
 for (let i = 0; i < rentang.count; i++) {
   dok.switchToPage(i);
   if (i === 0) continue; // sampul tanpa nomor
+
+  // Catatan kaki ini ditulis DI BAWAH margin bawah. Tanpa menurunkan
+  // margin sementara, PDFKit menganggapnya meluber lalu menambah satu
+  // halaman kosong untuk tiap catatan kaki - dokumen jadi dua kali lebih
+  // tebal dengan halaman kosong berselang-seling, dan nomornya meleset.
+  const bawah = dok.page.margins.bottom;
+  dok.page.margins.bottom = 0;
   dok.fillColor(ABU).font("Helvetica").fontSize(8);
   dok.text(
     `AgroMukti - Perhitungan Estimasi Produksi Pupuk          ${i + 1}`,
     M,
     dok.page.height - 38,
-    { width: L, align: "center" },
+    { width: L, align: "center", lineBreak: false },
   );
+  dok.page.margins.bottom = bawah;
 }
 
 dok.end();
