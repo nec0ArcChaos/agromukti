@@ -15,7 +15,10 @@
     "db:contoh": "tsx prisma/isi-data-contoh.ts",
     "docs:tangkapan": "node docs/ambil-tangkapan-layar.mjs",
     "docs:laporan": "node docs/buat-laporan-data.mjs",
-    "docs:berita": "node docs/buat-berita-acara.mjs"
+    "docs:berita": "node docs/buat-berita-acara.mjs",
+    "uji": "vitest run",
+    "uji:siapkan": "prisma migrate deploy",
+    "uji:beban": "node docs/uji-beban.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -38,6 +41,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autocannon": "^8.0.0",
     "docx": "^9.7.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
