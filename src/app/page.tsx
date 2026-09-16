@@ -12,15 +12,45 @@ function angka(n: Prisma.Decimal | number, desimal = 0) {
   return Number(n).toLocaleString("id-ID", { maximumFractionDigits: desimal });
 }
 
-export default async function Beranda() {
-  const [stat, cuaca] = await Promise.all([statistikPublik(), cuacaArgamukti()]);
+/**
+ * Statistik beranda yang tidak boleh menjatuhkan halaman.
+ *
+ * Halaman ini di-render lebih dulu saat build (lihat `revalidate` di
+ * atas), jadi kueri di dalamnya ikut dijalankan di mesin build. Tanpa
+ * penjaga ini, satu kueri statistik yang gagal - basis data awan sedang
+ * bangun dari tidur, jaringan tersendat sesaat - membatalkan SELURUH
+ * build dengan pesan "Export encountered an error on /page: /". Deployment
+ * pun tidak pernah jadi, dan pengunjung menerima 404 dari platform,
+ * bukan halaman desa.
+ *
+ * Tukarannya sepadan: angka statistik hanyalah hiasan di beranda,
+ * sementara layanan utamanya - cek status pengajuan dan ajuan pupuk -
+ * tidak bergantung padanya sama sekali.
+ */
+async function statistikAman() {
+  try {
+    return await statistikPublik();
+  } catch (galat) {
+    console.error("[beranda] Statistik desa gagal dibaca, bagian angka disembunyikan:", galat);
+    return null;
+  }
+}
 
-  const metrik = [
-    { label: "Petani terdaftar", nilai: angka(stat.petaniAktif), satuan: "orang", ikon: Tractor },
-    { label: "Luas lahan tercatat", nilai: angka(stat.totalHektare, 2), satuan: "hektare", ikon: Sprout },
-    { label: "Pupuk tersalurkan", nilai: angka(stat.pupukTersalurkan), satuan: "kg/liter", ikon: Leaf },
-    { label: "Sampah terkelola", nilai: angka(Number(stat.sampahAnorganikKg) + Number(stat.sampahOrganikKg)), satuan: "kg", ikon: Recycle },
-  ];
+export default async function Beranda() {
+  const [stat, cuaca] = await Promise.all([statistikAman(), cuacaArgamukti()]);
+
+  // Ketika statistik tak terbaca, bagian angka DISEMBUNYIKAN - bukan
+  // ditampilkan sebagai nol. "0 kg sampah terkelola" pada halaman publik
+  // desa adalah pernyataan yang keliru, dan lebih buruk daripada tidak
+  // menampilkan apa-apa.
+  const metrik = stat
+    ? [
+        { label: "Petani terdaftar", nilai: angka(stat.petaniAktif), satuan: "orang", ikon: Tractor },
+        { label: "Luas lahan tercatat", nilai: angka(stat.totalHektare, 2), satuan: "hektare", ikon: Sprout },
+        { label: "Pupuk tersalurkan", nilai: angka(stat.pupukTersalurkan), satuan: "kg/liter", ikon: Leaf },
+        { label: "Sampah terkelola", nilai: angka(Number(stat.sampahAnorganikKg) + Number(stat.sampahOrganikKg)), satuan: "kg", ikon: Recycle },
+      ]
+    : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -114,6 +144,7 @@ export default async function Beranda() {
       </section>
 
       {/* ---------- Metrik desa ---------- */}
+      {metrik.length > 0 && (
       <section className="mx-auto -mt-8 max-w-6xl px-4">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {metrik.map((m) => {
@@ -132,6 +163,7 @@ export default async function Beranda() {
           Angka dihitung langsung dari data sistem desa dan diperbarui otomatis.
         </p>
       </section>
+      )}
 
       {/* ---------- Tiga pilar ---------- */}
       <section className="mx-auto max-w-6xl px-4 py-16">
